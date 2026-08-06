@@ -871,7 +871,7 @@ export default function Dashboard() {
                   <div className="relative w-full">
                     <DatePicker 
                       selected={newCourse.startDate} 
-                      onChange={(date) => setNewCourse({...newCourse, startDate: date})} 
+                      onChange={(date: Date | null) => setNewCourse({...newCourse, startDate: date})} 
                       dateFormat="dd/MM/yyyy"
                       placeholderText="dd/mm/yyyy"
                       className={`${glassInput} pl-3 pr-8 w-full`}
@@ -884,7 +884,7 @@ export default function Dashboard() {
                   <div className="relative w-full">
                     <DatePicker 
                       selected={newCourse.endDate} 
-                      onChange={(date) => setNewCourse({...newCourse, endDate: date})} 
+                      onChange={(date: Date | null) => setNewCourse({...newCourse, endDate: date})} 
                       dateFormat="dd/MM/yyyy"
                       placeholderText="dd/mm/yyyy"
                       className={`${glassInput} pl-3 pr-8 w-full`}
