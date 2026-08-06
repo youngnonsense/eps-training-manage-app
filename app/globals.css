@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* โหลด Google Sans */
+@font-face {
+  font-family: 'Google Sans';
+  src: local('Google Sans'), url('https://fonts.gstatic.com/s/googlesans/v14/4UaGrENHsxJlGDuGo1OIlL3Owp4.woff2') format('woff2');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'Google Sans';
+  src: local('Google Sans'), url('https://fonts.gstatic.com/s/googlesans/v14/4UaErENHsxJlGDuGo1OIlIQa.woff2') format('woff2');
+  font-weight: 500;
+}
+@font-face {
+  font-family: 'Google Sans';
+  src: local('Google Sans'), url('https://fonts.gstatic.com/s/googlesans/v14/4UabrENHsxJlGDuGo1OIlLU94Ytzcw.woff2') format('woff2');
+  font-weight: 700;
+}
+
+/* บังคับใช้ Google Sans ก่อน ถ้าไม่เจอ (เช่นภาษาไทย) ให้ใช้ Bai Jamjuree แทน */
+body {
+  font-family: 'Google Sans', 'Bai Jamjuree', sans-serif;
+}
+
+/* ซ่อน Scrollbar ให้ดูสะอาดตา */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Custom React DatePicker Styles */
+.react-datepicker-wrapper { 
+  width: 100%; 
+}
+.react-datepicker { 
+  font-family: 'Google Sans', 'Bai Jamjuree', sans-serif !important; 
+  border-radius: 1rem !important; 
+  border: 1px solid #f3f4f6 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  border-collapse: separate !important;
+}
+.react-datepicker__header {
+  border-top-left-radius: 1rem !important;
+  border-top-right-radius: 1rem !important;
+  background-color: #f9fafb !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+}
+.react-datepicker__day--selected, .react-datepicker__day--keyboard-selected {
+  background-color: #111827 !important; /* gray-900 */
+  color: white !important;
+  border-radius: 0.5rem !important;
+}
+
+/* Dark Mode Overrides */
+.dark .react-datepicker { 
+  background-color: #2A2A2A !important; 
+  border-color: #374151 !important; 
+}
+.dark .react-datepicker__header { 
+  background-color: #1E1E1E !important; 
+  border-bottom-color: #374151 !important; 
+}
+.dark .react-datepicker__current-month, 
+.dark .react-datepicker__day-name { 
+  color: #f3f4f6 !important; 
+}
+.dark .react-datepicker__day { 
+  color: #d1d5db !important; 
+}
+.dark .react-datepicker__day:hover { 
+  background-color: #374151 !important; 
+  border-radius: 0.5rem !important;
+}
+.dark .react-datepicker__day--selected { 
+  background-color: #f3f4f6 !important;
+  color: #111827 !important;
+}
