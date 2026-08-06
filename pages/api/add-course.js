@@ -1,60 +1,79 @@
-import { getDoc } from '../../lib/googleSheets';
+import { google } from 'googleapis';
 
 export default async function handler(req, res) {
+  // รับเฉพาะ Method POST
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
-  const { courseCode, courseName, category, startDate, endDate, durationHours, instructor, location } = req.body;
-
-  if (!courseName || !durationHours) {
-    return res.status(400).json({ error: 'กรุณากรอกชื่อหลักสูตรและชั่วโมงอบรม' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const doc = await getDoc();
-    const courseSheet = doc.sheetsByTitle['Courses'];
+    // รับค่ามาจาก Frontend ซึ่งตอนนี้ startDate และ endDate เป็น String "DD/MM/YYYY" ที่สมบูรณ์แล้ว
+    const { 
+      courseCode, courseName, category, 
+      startDate, endDate, durationHours, 
+      instructor, location 
+    } = req.body;
 
-    if (!courseSheet) {
-      throw new Error('ไม่พบแท็บ Courses ใน Google Sheets');
+    if (!courseName) {
+      return res.status(400).json({ error: 'กรุณากรอกชื่อหลักสูตร' });
     }
 
-    // หา course_id ล่าสุดที่เป็นตัวเลข
-    const rows = await courseSheet.getRows();
-    let nextIdNumber = 1;
+    // ตั้งค่าการเชื่อมต่อ
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
     
-    if (rows.length > 0) {
-      const lastId = rows[rows.length - 1].get('course_id');
-      const parsedId = parseInt(lastId, 10);
-      if (!isNaN(parsedId)) {
-        nextIdNumber = parsedId + 1; // รันตัวเลขต่อจากแถวสุดท้าย
-      } else {
-        nextIdNumber = rows.length + 1;
+    // ⚠️ ตรงนี้แก้ชื่อชีตให้ตรงกับที่คุณใช้ใน Google Sheets นะครับ (ปกติจะเป็น Courses)
+    const SHEET_NAME = 'Courses'; 
+
+    // 1. ดึงข้อมูลทั้งหมดในชีตมาดูก่อน เพื่อหาเลข ID ล่าสุด
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAME}!A:A`, 
+    });
+
+    const rows = response.data.values || [];
+    let nextId = 1;
+    if (rows.length > 1) {
+      // เอาแถวสุดท้าย (ที่ไม่ใช่ Header) มาเช็คเลข ID แล้วบวก 1
+      const lastId = parseInt(rows[rows.length - 1][0]);
+      if (!isNaN(lastId)) {
+        nextId = lastId + 1;
       }
     }
 
-    // ฟังก์ชันแปลงวันที่จาก "2026-07-23" (HTML Date) เป็น "23/7/2026" (Google Sheets format)
-    const formatDate = (dateString) => {
-      if (!dateString) return '';
-      const [year, month, day] = dateString.split('-');
-      return `${parseInt(day, 10)}/${parseInt(month, 10)}/${year}`;
-    };
-
-    // บันทึกลง Sheet ให้ตรง Column เป๊ะๆ
-    await courseSheet.addRow({
-      course_id: nextIdNumber,
-      course_code: courseCode || '',
-      course_name: courseName,
-      category: category || 'หลักสูตรทั่วไป',
-      start_date: formatDate(startDate),
-      end_date: formatDate(endDate),
-      duration_hours: durationHours,
-      instructor: instructor || '',
-      location: location || ''
+    // 2. บันทึกข้อมูลใหม่ลง Google Sheets
+    // 💡 สังเกตว่าเราใช้ startDate และ endDate แบบตรงๆ เลย ไม่ต้องผ่าน new Date() 
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAME}!A:I`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[
+          nextId,                // คอลัมน์ A: course_id
+          courseCode || '',      // คอลัมน์ B: course_code
+          courseName || '',      // คอลัมน์ C: course_name
+          category || '',        // คอลัมน์ D: category
+          startDate || '',       // คอลัมน์ E: start_date (จะเป็น 06/08/2026 สวยๆ เลย)
+          endDate || '',         // คอลัมน์ F: end_date
+          durationHours || '',   // คอลัมน์ G: duration_hours
+          instructor || '',      // คอลัมน์ H: instructor
+          location || ''         // คอลัมน์ I: location
+        ]],
+      },
     });
 
-    return res.status(200).json({ success: true, courseId: nextIdNumber });
+    return res.status(200).json({ success: true, message: 'เพิ่มหลักสูตรสำเร็จ' });
+
   } catch (error) {
+    console.error('Error adding course:', error);
     return res.status(500).json({ error: error.message });
   }
 }
