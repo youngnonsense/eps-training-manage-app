@@ -36,7 +36,6 @@ export default function Dashboard() {
   const [regSearch, setRegSearch] = useState('');
   const [regDeptFilter, setRegDeptFilter] = useState('All');
 
-  // เปลี่ยนการเก็บค่าวันที่เป็น Date object เพื่อใช้กับ DatePicker
   const [newCourse, setNewCourse] = useState({ 
     courseCode: '', courseName: '', category: 'หลักสูตรทั่วไป', 
     startDate: null as Date | null, endDate: null as Date | null, durationHours: '', instructor: '', location: '' 
@@ -135,7 +134,6 @@ export default function Dashboard() {
     } finally { setIsSubmitting(false); }
   };
 
-  // Format Date กลับเป็นสตริงแบบ dd/mm/yyyy ก่อนส่งให้ API
   const formatDateForApi = (date: Date | null) => {
     if (!date) return '';
     const d = date.getDate().toString().padStart(2, '0');
@@ -192,7 +190,7 @@ export default function Dashboard() {
   };
 
   const isCourseUpcoming = (dateStr: string) => {
-    if (!dateStr) return true;
+    if (!dateStr || typeof dateStr !== 'string') return true;
     const parts = dateStr.split('/');
     if (parts.length !== 3) return true;
     const courseDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
@@ -201,7 +199,7 @@ export default function Dashboard() {
   };
 
   const parseDateStr = (dateStr: string) => {
-    if (!dateStr) return null;
+    if (!dateStr || typeof dateStr !== 'string') return null;
     const parts = dateStr.split('/');
     if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
     return null;
@@ -218,7 +216,7 @@ export default function Dashboard() {
 
   const departments = data?.employees ? ['All', ...new Set(data.employees.map((e:any) => e.departmentName).filter(Boolean))] : ['All'];
   
-  const filteredEmployees = data?.employees.filter((emp: any) => {
+  const filteredEmployees = data?.employees?.filter((emp: any) => {
     const matchSearch = (emp.nameTh || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
                         (emp.nameEn || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
                         (emp.employeeId || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -227,7 +225,7 @@ export default function Dashboard() {
     return matchSearch && matchDept && matchKpi;
   }) || [];
 
-  const filteredRegEmployees = data?.employees.filter((emp: any) => {
+  const filteredRegEmployees = data?.employees?.filter((emp: any) => {
     const matchSearch = (emp.nameTh || '').toLowerCase().includes(regSearch.toLowerCase()) || 
                         (emp.employeeId || '').toLowerCase().includes(regSearch.toLowerCase());
     const matchDept = regDeptFilter === 'All' || emp.departmentName === regDeptFilter;
@@ -270,7 +268,6 @@ export default function Dashboard() {
                 <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-medium">HR Development Dashboard</p>
               </div>
             </div>
-            {/* Mobile Theme Toggle */}
             <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} className="xl:hidden p-2.5 bg-white dark:bg-[#2A2A2A] hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 transition-all text-gray-600 dark:text-gray-300 shadow-sm">
               {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
@@ -302,10 +299,10 @@ export default function Dashboard() {
             <div id="overview" className="scroll-mt-32">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {[
-                  { label: 'พนักงานทั้งหมด', val: data.employees.length, icon: Users, color: 'text-gray-700 dark:text-gray-200', bg: 'bg-gray-100 dark:bg-[#2A2A2A]' },
-                  { label: 'ผ่าน KPI แล้ว', val: data.employees.filter((e:any)=>e.kpi.isPassed).length, icon: CheckCircle, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-                  { label: 'ยังไม่ผ่าน KPI', val: data.employees.filter((e:any)=>!e.kpi.isPassed).length, icon: Clock, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20' },
-                  { label: 'หลักสูตรทั้งหมด', val: data.courses.length, icon: BookOpen, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' }
+                  { label: 'พนักงานทั้งหมด', val: data.employees?.length || 0, icon: Users, color: 'text-gray-700 dark:text-gray-200', bg: 'bg-gray-100 dark:bg-[#2A2A2A]' },
+                  { label: 'ผ่าน KPI แล้ว', val: data.employees?.filter((e:any)=>e.kpi.isPassed).length || 0, icon: CheckCircle, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+                  { label: 'ยังไม่ผ่าน KPI', val: data.employees?.filter((e:any)=>!e.kpi.isPassed).length || 0, icon: Clock, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20' },
+                  { label: 'หลักสูตรทั้งหมด', val: data.courses?.length || 0, icon: BookOpen, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' }
                 ].map((stat, i) => (
                   <div key={i} className={`${glassCard} flex flex-col xl:flex-row items-center xl:items-start gap-3 md:gap-4 hover:-translate-y-1 group`}>
                     <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center ${stat.bg} ${stat.color} shadow-inner shrink-0`}>
@@ -347,7 +344,7 @@ export default function Dashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                        {data.courses.map((course: any) => {
+                        {data.courses?.map((course: any) => {
                           const upcoming = isCourseUpcoming(course.startDate);
                           return (
                             <tr key={course.courseId} onClick={() => setSelectedCourse(course)} className="hover:bg-gray-50 dark:hover:bg-[#2A2A2A] transition-colors group cursor-pointer">
@@ -398,19 +395,19 @@ export default function Dashboard() {
                         {calendarCells.map((dayDate, index) => {
                           if (!dayDate) return <div key={`blank-${index}`} className="min-h-[100px] md:min-h-[120px] rounded-2xl bg-gray-50/50 dark:bg-[#262626]/50 border border-gray-100 dark:border-gray-800"></div>;
                           
-                          const coursesOnThisDay = data.courses.filter((c: any) => {
+                          const coursesOnThisDay = data.courses?.filter((c: any) => {
                             const sDate = parseDateStr(c.startDate);
-                            if (!sDate) return false; // ขยับบรรทัดนี้ขึ้นมาเช็คก่อน
+                            if (!sDate) return false;
 
                             const eDate = parseDateStr(c.endDate) || sDate;
 
-                            const current = new Date(dayDate); current.setHours(0,0,0,0);
-                            // ใช้ as Date เพื่อยืนยันกับ TypeScript ว่ามีค่าแน่นอน
+                            // เพิ่มความปลอดภัยขั้นสูงสุดด้วย as Date ป้องกัน null หลุดเข้ามา
+                            const current = new Date(dayDate as Date); current.setHours(0,0,0,0);
                             const start = new Date(sDate as Date); start.setHours(0,0,0,0);
                             const end = new Date(eDate as Date); end.setHours(0,0,0,0);
   
                             return current >= start && current <= end;
-                          });
+                          }) || [];
                           
                           const isToday = new Date().toDateString() === dayDate.toDateString();
                           
@@ -678,10 +675,10 @@ export default function Dashboard() {
             <div className="grid md:grid-cols-3 gap-4">
               <div className="bg-rose-50/50 dark:bg-rose-900/10 p-4 md:p-5 rounded-3xl border border-rose-100/50 dark:border-rose-900/20">
                 <h4 className="font-bold text-xs md:text-sm text-rose-600 dark:text-rose-400 mb-3 md:mb-4 flex items-center gap-2">
-                  <AlertCircle size={16} /> ต้องเรียนเพิ่ม ({selectedEmp.todoList.length})
+                  <AlertCircle size={16} /> ต้องเรียนเพิ่ม ({selectedEmp.todoList?.length || 0})
                 </h4>
                 <div className="space-y-2 max-h-[250px] md:max-h-[300px] overflow-y-auto pr-2 hide-scrollbar">
-                  {selectedEmp.todoList.length === 0 ? <p className="text-xs text-gray-400">ครบถ้วนแล้ว เก่งมาก!</p> : selectedEmp.todoList.map((item: string, idx: number) => (
+                  {!selectedEmp.todoList || selectedEmp.todoList.length === 0 ? <p className="text-xs text-gray-400">ครบถ้วนแล้ว เก่งมาก!</p> : selectedEmp.todoList.map((item: string, idx: number) => (
                     <div key={idx} className="p-3 bg-white dark:bg-[#262626] rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-xs font-medium flex gap-2 text-gray-700 dark:text-gray-300 leading-snug"><span className="text-rose-400 shrink-0">•</span> <span>{item}</span></div>
                   ))}
                 </div>
@@ -689,10 +686,10 @@ export default function Dashboard() {
 
               <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 md:p-5 rounded-3xl border border-emerald-100/50 dark:border-emerald-900/20">
                 <h4 className="font-bold text-xs md:text-sm text-emerald-600 dark:text-emerald-400 mb-3 md:mb-4 flex items-center gap-2">
-                  <CheckCircle size={16} /> ผ่านแล้วปีนี้ ({selectedEmp.completedList.length})
+                  <CheckCircle size={16} /> ผ่านแล้วปีนี้ ({selectedEmp.completedList?.length || 0})
                 </h4>
                 <div className="space-y-2 max-h-[250px] md:max-h-[300px] overflow-y-auto pr-2 hide-scrollbar">
-                  {selectedEmp.completedList.length === 0 ? <p className="text-xs text-gray-400">ยังไม่มีประวัติ</p> : selectedEmp.completedList.map((item: string, idx: number) => (
+                  {!selectedEmp.completedList || selectedEmp.completedList.length === 0 ? <p className="text-xs text-gray-400">ยังไม่มีประวัติ</p> : selectedEmp.completedList.map((item: string, idx: number) => (
                     <div key={idx} className="p-3 bg-white dark:bg-[#262626] rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-xs font-medium flex gap-2 text-gray-700 dark:text-gray-300 leading-snug"><CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" /> <span>{item}</span></div>
                   ))}
                 </div>
@@ -809,7 +806,7 @@ export default function Dashboard() {
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">เลือกหลักสูตรที่ต้องการลงทะเบียน</label>
                   <select required className={`${glassInput} h-10 md:h-12 text-xs md:text-sm`} onChange={e => setRegCourseId(e.target.value)} value={regCourseId}>
                     <option value="">-- เลือกหลักสูตร --</option>
-                    {data?.courses.filter((c:any) => isCourseUpcoming(c.startDate)).map((c:any) => (
+                    {data?.courses?.filter((c:any) => isCourseUpcoming(c.startDate)).map((c:any) => (
                       <option key={c.courseId} value={c.courseId}>[{c.courseId}] {c.courseName}</option>
                     ))}
                   </select>
