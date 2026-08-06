@@ -15,24 +15,38 @@ export default async function handler(req, res) {
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
         private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
 
     const sheets = google.sheets({ version: 'v4', auth });
-    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+    const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID; 
     const SHEET_NAME = 'Training_History';
 
     // กรณีเพิ่มประวัติ
     if (action === 'add') {
+      // สร้างวันที่ปัจจุบันในรูปแบบ DD/MM/YYYY (อิงตาม Timezone ไทย)
+      const today = new Date();
+      const currentDate = new Intl.DateTimeFormat('en-GB', { 
+        timeZone: 'Asia/Bangkok',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(today);
+      
+      // กำหนดสถานะเริ่มต้น
+      const status = 'ผ่านการอบรม';
+
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEET_NAME}!A:B`,
+        // ขยาย Range เป็น A:D เพื่อรองรับคอลัมน์ วันที่ และ สถานะ
+        range: `${SHEET_NAME}!A:D`,
         valueInputOption: 'USER_ENTERED',
         requestBody: {
-          values: [[employeeId, courseName]],
+          // เรียงตามคอลัมน์: A(รหัส), B(วิชา), C(วันที่), D(สถานะ)
+          values: [[employeeId, courseName, currentDate, status]],
         },
       });
       return res.status(200).json({ success: true, message: 'บันทึกประวัติสำเร็จ' });
@@ -42,7 +56,7 @@ export default async function handler(req, res) {
     else if (action === 'remove') {
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEET_NAME}!A:B`,
+        range: `${SHEET_NAME}!A:B`, // ดึงแค่ A และ B มาเช็คก็พอ
       });
 
       const rows = response.data.values || [];

@@ -134,11 +134,15 @@ export default function Dashboard() {
     } finally { setIsSubmitting(false); }
   };
 
+  // ✅ แก้ไข: ดักจับ Error ในกรณีที่ Date ไม่ถูกต้อง (ป้องกัน NaN/NaN/0)
   const formatDateForApi = (date: Date | null) => {
     if (!date) return '';
-    const d = date.getDate().toString().padStart(2, '0');
-    const m = (date.getMonth() + 1).toString().padStart(2, '0');
-    const y = date.getFullYear();
+    const dObj = new Date(date);
+    if (isNaN(dObj.getTime())) return ''; // เพิ่มเช็ค valid date
+    
+    const d = dObj.getDate().toString().padStart(2, '0');
+    const m = (dObj.getMonth() + 1).toString().padStart(2, '0');
+    const y = dObj.getFullYear();
     return `${d}/${m}/${y}`;
   };
 
@@ -253,6 +257,20 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-[#FDFBF7] dark:bg-[#121212] text-gray-900 dark:text-gray-200 p-3 md:p-8 transition-colors duration-500">
+      
+      {/* ✅ แก้ไข: เพิ่ม Global CSS ย่อขนาด DatePicker และตั้งค่าสี Dark Mode */}
+      <style>{`
+        .react-datepicker { font-size: 0.8rem !important; border: 1px solid #e5e7eb !important; border-radius: 1rem !important; overflow: hidden; font-family: inherit !important; }
+        .react-datepicker__header { padding-top: 0.5rem !important; background-color: #f9fafb !important; border-bottom: 1px solid #e5e7eb !important; }
+        .react-datepicker__day-name, .react-datepicker__day { width: 1.6rem !important; line-height: 1.6rem !important; margin: 0.15rem !important; }
+        .dark .react-datepicker { background-color: #1E1E1E !important; border-color: #374151 !important; color: #fff !important; }
+        .dark .react-datepicker__header { background-color: #2A2A2A !important; border-bottom-color: #374151 !important; }
+        .dark .react-datepicker__current-month, .dark .react-datepicker__day-name { color: #9ca3af !important; }
+        .dark .react-datepicker__day { color: #d1d5db !important; }
+        .dark .react-datepicker__day:hover { background-color: #374151 !important; }
+        .dark .react-datepicker__day--selected { background-color: #f3f4f6 !important; color: #111827 !important; font-weight: bold; }
+      `}</style>
+
       <div className="max-w-[1400px] mx-auto space-y-6 md:space-y-8 relative">
         
         <header className={`sticky top-3 md:top-4 z-40 ${glassCard} flex flex-col xl:flex-row justify-between items-center gap-4 py-4 px-4 md:px-6`}>
@@ -401,7 +419,6 @@ export default function Dashboard() {
 
                             const eDate = parseDateStr(c.endDate) || sDate;
 
-                            // เพิ่มความปลอดภัยขั้นสูงสุดด้วย as Date ป้องกัน null หลุดเข้ามา
                             const current = new Date(dayDate as Date); current.setHours(0,0,0,0);
                             const start = new Date(sDate as Date); start.setHours(0,0,0,0);
                             const end = new Date(eDate as Date); end.setHours(0,0,0,0);
@@ -708,6 +725,7 @@ export default function Dashboard() {
                   </button>
                 </div>
                 
+                {/* ✅ แก้ไข: อัปเดตสีพื้นหลัง/ตัวอักษรของ <select> และ <option> ใน Dark Mode */}
                 {isAddingHistory && (
                   <div className="flex gap-2 mb-3 bg-white dark:bg-[#1E1E1E] p-2 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
                     <select 
@@ -715,9 +733,9 @@ export default function Dashboard() {
                       onChange={e => setNewHistoryItem(e.target.value)} 
                       className="text-xs p-1.5 rounded-lg bg-transparent border border-gray-200 dark:border-gray-700 outline-none w-full text-gray-800 dark:text-gray-200 cursor-pointer" 
                     >
-                      <option value="">-- เลือกหลักสูตร --</option>
+                      <option value="" className="bg-white dark:bg-[#1E1E1E] text-gray-800 dark:text-gray-200">-- เลือกหลักสูตร --</option>
                       {data?.mandatoryCourses?.map((courseName: string, idx: number) => (
-                        <option key={idx} value={courseName}>{courseName}</option>
+                        <option key={idx} value={courseName} className="bg-white dark:bg-[#1E1E1E] text-gray-800 dark:text-gray-200">{courseName}</option>
                       ))}
                     </select>
                     <button 
@@ -833,7 +851,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Modal: เพิ่มหลักสูตร (อัปเดต DatePicker แบบ dd/mm/yyyy สวยงาม) */}
+      {/* Modal: เพิ่มหลักสูตร */}
       {showCourseModal && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-4 z-50">
           <div className="bg-white dark:bg-[#1E1E1E] p-5 md:p-8 rounded-3xl md:rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-2xl max-w-xl w-full max-h-[85vh] md:max-h-[95vh] overflow-y-auto hide-scrollbar">
@@ -864,7 +882,6 @@ export default function Dashboard() {
                 <input required placeholder="พิมพ์ชื่อวิชาที่นี่..." className={`${glassInput}`} value={newCourse.courseName} onChange={e => setNewCourse({...newCourse, courseName: e.target.value})}/>
               </div>
               
-              {/* ใช้ React DatePicker แทน Native Input */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                 <div className="relative">
                   <label className="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">วันที่เริ่ม</label>
