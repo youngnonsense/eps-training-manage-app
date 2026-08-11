@@ -41,7 +41,7 @@ export default function Dashboard() {
     startDate: null as Date | null, endDate: null as Date | null, durationHours: '', instructor: '', location: '' 
   });
 
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 6, 1)); 
+  const [currentMonth, setCurrentMonth] = useState(new Date()); 
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -337,7 +337,7 @@ export default function Dashboard() {
                 </h2>
                 <div className="w-full sm:w-auto bg-gray-50 dark:bg-[#2A2A2A] p-1.5 rounded-2xl flex gap-1 border border-gray-100 dark:border-gray-700 shadow-sm">
                   <button onClick={() => setViewMode('list')} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}><List size={16} /> List</button>
-                  <button onClick={() => setViewMode('calendar')} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${viewMode === 'calendar' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}><CalendarIcon size={16} /> Calendar</button>
+                  <button onClick={() => { setViewMode('calendar'); setCurrentMonth(new Date()); }} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${viewMode === 'calendar' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}><CalendarIcon size={16} /> Calendar</button>
                 </div>
               </div>
 
@@ -608,7 +608,16 @@ export default function Dashboard() {
                         </td>
                         <td className="p-3 md:p-4 text-center">
                           <span className="text-[10px] md:text-xs font-bold px-2 py-1 md:px-3 md:py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50">
-                            {att.status}
+                            {(() => {
+                              const parts = selectedCourse.startDate?.split('/') || [];
+                              if (parts.length === 3) {
+                                const cDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                                const today = new Date(); 
+                                today.setHours(0, 0, 0, 0); // ตั้งค่าให้เทียบแค่วันที่
+                                return cDate < today ? 'Attended' : 'Registered';
+                              }
+                              return att.status || 'Registered';
+                            })()}
                           </span>
                         </td>
                         <td className="p-3 md:p-4 text-center">
