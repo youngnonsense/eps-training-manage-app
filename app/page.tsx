@@ -191,12 +191,7 @@ export default function Dashboard() {
   };
 
   const isCourseUpcoming = (dateStr: string) => {
-    if (!dateStr || typeof dateStr !== 'string') return true;
-    const parts = dateStr.split('/');
-    if (parts.length !== 3) return true;
-    const courseDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    return courseDate >= today;
+  return true; // ปลดล็อก: อนุญาตให้ปุ่ม + แสดงเสมอ ไม่ว่าจะเป็นอดีตหรืออนาคต
   };
 
   const parseDateStr = (dateStr: string) => {
@@ -336,7 +331,6 @@ export default function Dashboard() {
                     <table className="w-full text-left border-collapse min-w-[1000px]">
                       <thead>
                         <tr className="border-b border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider bg-gray-50/50 dark:bg-[#262626]">
-                          <th className="p-4 font-bold w-16 text-center">ID</th>
                           <th className="p-4 font-bold">Course Code</th>
                           <th className="p-4 font-bold w-1/4">Course Name</th>
                           <th className="p-4 font-bold">Category</th>
@@ -355,7 +349,6 @@ export default function Dashboard() {
                           const upcoming = isCourseUpcoming(course.startDate);
                           return (
                             <tr key={course.courseId} onClick={() => setSelectedCourse(course)} className="hover:bg-gray-50 dark:hover:bg-[#2A2A2A] transition-colors group cursor-pointer">
-                              <td className="p-4 text-sm font-black text-gray-800 dark:text-gray-300 text-center">{course.courseId}</td>
                               <td className="p-4 text-sm text-gray-600 dark:text-gray-400 font-medium">{course.courseCode || '-'}</td>
                               <td className="p-4 text-sm font-bold text-gray-900 dark:text-gray-100">
                                 {course.courseName}
