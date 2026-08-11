@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   BookOpen, Target, Plus, Search, Trash2, Calendar as CalendarIcon, 
   List, Users, CheckCircle, Clock, Sparkles, ChevronLeft, 
-  ChevronRight, X, UserSearch, AlertCircle, Phone, Mail, Sun, Moon, Map, Activity, Copy, Check, ShieldCheck
+  ChevronRight, X, UserSearch, AlertCircle, Phone, Mail, Sun, Moon, Map, Activity, Copy, Check, ShieldCheck, Edit
 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -41,7 +41,14 @@ export default function Dashboard() {
     startDate: null as Date | null, endDate: null as Date | null, durationHours: '', instructor: '', location: '' 
   });
 
-  // ✅ 1. แก้ให้ Calendar ดึงเดือนปัจจุบันเสมอตอนโหลดหน้าเว็บ
+  // --- สำหรับแก้ไขหลักสูตร ---
+  const [showEditCourseModal, setShowEditCourseModal] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<any>({
+    courseId: '', courseCode: '', courseName: '', category: '', 
+    startDate: null as Date | null, endDate: null as Date | null, durationHours: '', instructor: '', location: ''
+  });
+
+  // แสดงผลปฏิทินที่เดือนปัจจุบันเสมอ
   const [currentMonth, setCurrentMonth] = useState(new Date()); 
 
   useEffect(() => {
@@ -164,6 +171,25 @@ export default function Dashboard() {
     } finally { setIsSubmitting(false); }
   };
 
+  const handleUpdateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    const payload = {
+      ...editingCourse,
+      startDate: formatDateForApi(editingCourse.startDate),
+      endDate: formatDateForApi(editingCourse.endDate)
+    };
+
+    try {
+      const res = await fetch('/api/edit-course', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (res.ok) { 
+        alert('อัปเดตข้อมูลหลักสูตรสำเร็จ!'); 
+        setShowEditCourseModal(false); 
+        fetchDashboardData(); 
+      } else { alert('เกิดข้อผิดพลาดในการอัปเดต'); }
+    } finally { setIsSubmitting(false); }
+  };
+
   const handleDeleteCourse = async (courseId: string, courseName: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (!confirm(`⚠️ คุณแน่ใจหรือไม่ว่าต้องการลบหลักสูตร "${courseName}"?`)) return;
@@ -190,8 +216,9 @@ export default function Dashboard() {
     navigator.clipboard.writeText(email); setCopiedEmail(true); setTimeout(() => setCopiedEmail(false), 2000);
   };
 
+  // ปลดล็อกให้ปุ่ม + แสดงเสมอ ไม่ว่าจะเป็นอดีตหรืออนาคต
   const isCourseUpcoming = (dateStr: string) => {
-  return true; // ปลดล็อก: อนุญาตให้ปุ่ม + แสดงเสมอ ไม่ว่าจะเป็นอดีตหรืออนาคต
+    return true; 
   };
 
   const parseDateStr = (dateStr: string) => {
@@ -320,7 +347,6 @@ export default function Dashboard() {
                 </h2>
                 <div className="w-full sm:w-auto bg-gray-50 dark:bg-[#2A2A2A] p-1.5 rounded-2xl flex gap-1 border border-gray-100 dark:border-gray-700 shadow-sm">
                   <button onClick={() => setViewMode('list')} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}><List size={16} /> List</button>
-                  {/* ✅ 1. เพิ่ม setCurrentMonth(new Date()) เพื่อให้กด Calendar แล้วมาที่เดือนปัจจุบัน */}
                   <button onClick={() => { setViewMode('calendar'); setCurrentMonth(new Date()); }} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${viewMode === 'calendar' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}><CalendarIcon size={16} /> Calendar</button>
                 </div>
               </div>
@@ -340,7 +366,6 @@ export default function Dashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                        {/* ✅ 2. เรียงตารางหลักสูตรตามวันที่ในหน้า List View */}
                         {[...(data.courses || [])].sort((a, b) => {
                           const dateA = parseDateStr(a.startDate)?.getTime() || 0;
                           const dateB = parseDateStr(b.startDate)?.getTime() || 0;
@@ -364,6 +389,18 @@ export default function Dashboard() {
                                   {upcoming && (
                                     <button onClick={(e) => { e.stopPropagation(); setRegCourseId(course.courseId.toString()); setRegSelectedEmps([]); setShowRegModal(true); }} className="p-2 bg-gray-100 dark:bg-[#333] hover:bg-gray-200 text-gray-600 dark:text-gray-300 rounded-xl transition-all shadow-sm"><Plus size={16}/></button>
                                   )}
+                                  
+                                  <button onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    setEditingCourse({
+                                      ...course,
+                                      startDate: parseDateStr(course.startDate),
+                                      endDate: parseDateStr(course.endDate),
+                                      durationHours: course.hours || ''
+                                    });
+                                    setShowEditCourseModal(true);
+                                  }} className="p-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-blue-500 dark:text-blue-400 rounded-xl transition-all shadow-sm"><Edit size={16}/></button>
+
                                   <button onClick={(e) => handleDeleteCourse(course.courseId, course.courseName, e)} className="p-2 bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 text-rose-500 dark:text-rose-400 rounded-xl transition-all shadow-sm"><Trash2 size={16}/></button>
                                 </div>
                               </td>
@@ -594,7 +631,6 @@ export default function Dashboard() {
                           <div className="text-[10px] text-gray-400 mt-0.5">{att.department}</div>
                         </td>
                         <td className="p-3 md:p-4 text-center">
-                          {/* ✅ 3. คำนวณและแสดงผลสถานะ Attended/Registered อัตโนมัติ พร้อมสลับสี */}
                           {(() => {
                             let currentStatus = att.status || 'Registered';
                             const parts = selectedCourse.startDate?.split('/') || [];
@@ -847,6 +883,82 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: แก้ไขหลักสูตร */}
+      {showEditCourseModal && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-4 z-50">
+          <div className="bg-white dark:bg-[#1E1E1E] p-5 md:p-8 rounded-3xl md:rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-2xl max-w-xl w-full max-h-[85vh] md:max-h-[95vh] overflow-y-auto hide-scrollbar">
+            <h3 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-gray-900 dark:text-white">
+              <Edit className="text-blue-600 dark:text-blue-400"/> แก้ไขข้อมูลหลักสูตร
+            </h3>
+            <form onSubmit={handleUpdateCourse} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">รหัสอ้างอิง</label>
+                  <input placeholder="เช่น HR-001" className={`${glassInput}`} value={editingCourse.courseCode} onChange={e => setEditingCourse({...editingCourse, courseCode: e.target.value})}/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">หมวดหมู่</label>
+                  <select className={`${glassInput}`} value={editingCourse.category} onChange={e => setEditingCourse({...editingCourse, category: e.target.value})}>
+                    <option value="หลักสูตรทั่วไป">หลักสูตรทั่วไป</option>
+                    <option value="หลักสูตรเฉพาะ">หลักสูตรเฉพาะ</option>
+                    <option value="หลักสูตรความปลอดภัย">หลักสูตรความปลอดภัย</option>
+                    <option value="หลักสูตรพัฒนาทักษะ">หลักสูตรพัฒนาทักษะ</option>
+                    <option value="สัมมนาภายนอก/พัฒนาทักษะ">สัมมนาภายนอก/พัฒนาทักษะ</option>
+                    <option value="OJT">OJT</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">ชื่อหลักสูตร *</label>
+                <input required placeholder="พิมพ์ชื่อวิชาที่นี่..." className={`${glassInput}`} value={editingCourse.courseName} onChange={e => setEditingCourse({...editingCourse, courseName: e.target.value})}/>
+              </div>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+                <div className="relative">
+                  <label className="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">วันที่เริ่ม</label>
+                  <div className="relative w-full">
+                    <DatePicker 
+                      selected={editingCourse.startDate} 
+                      onChange={(date: Date | null) => setEditingCourse({...editingCourse, startDate: date})} 
+                      dateFormat="dd/MM/yyyy" placeholderText="dd/mm/yyyy" className={`${glassInput} pl-3 pr-8 w-full`}
+                    />
+                  </div>
+                </div>
+                <div className="relative">
+                  <label className="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">วันที่จบ</label>
+                  <div className="relative w-full">
+                    <DatePicker 
+                      selected={editingCourse.endDate} 
+                      onChange={(date: Date | null) => setEditingCourse({...editingCourse, endDate: date})} 
+                      dateFormat="dd/MM/yyyy" placeholderText="dd/mm/yyyy" className={`${glassInput} pl-3 pr-8 w-full`}
+                    />
+                  </div>
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">ชั่วโมงอบรม *</label>
+                  <input required type="number" min="0.5" step="0.5" placeholder="เช่น 6" className={`${glassInput}`} value={editingCourse.durationHours} onChange={e => setEditingCourse({...editingCourse, durationHours: e.target.value})}/>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">ผู้สอน</label>
+                  <input placeholder="ชื่อวิทยากร" className={`${glassInput}`} value={editingCourse.instructor} onChange={e => setEditingCourse({...editingCourse, instructor: e.target.value})}/>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">สถานที่</label>
+                  <input placeholder="เช่น ห้องประชุม A, Zoom" className={`${glassInput}`} value={editingCourse.location} onChange={e => setEditingCourse({...editingCourse, location: e.target.value})}/>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-6 border-t border-gray-100 dark:border-gray-800 mt-2">
+                <button type="button" onClick={() => setShowEditCourseModal(false)} className="flex-1 py-3 bg-gray-100 dark:bg-[#333] hover:bg-gray-200 text-gray-700 dark:text-gray-200 rounded-xl font-bold text-sm transition-colors">ยกเลิก</button>
+                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-colors shadow-md">{isSubmitting ? 'กำลังอัปเดต...' : 'บันทึกการแก้ไข'}</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
