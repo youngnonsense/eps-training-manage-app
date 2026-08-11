@@ -9,17 +9,21 @@ export default async function handler(req, res) {
 
   try {
     const doc = await getDoc();
-    const sheet = doc.sheetsByTitle['Courses'];
-    const rows = await sheet.getRows();
+    const courseSheet = doc.sheetsByTitle['Courses'];
+    const regSheet = doc.sheetsByTitle['Registrations']; // 1. ดึงแท็บ Registrations เพิ่ม
+    
+    if (!courseSheet) {
+      throw new Error('ไม่พบแท็บ Courses ใน Google Sheets');
+    }
 
-    // หาบรรทัดที่มี course_id ตรงกับที่เราต้องการแก้
-    const rowToUpdate = rows.find(r => r.get('course_id') === courseId.toString());
+    // 2. อัปเดตข้อมูลหลักสูตรในแท็บ Courses
+    const courseRows = await courseSheet.getRows();
+    const rowToUpdate = courseRows.find(r => r.get('course_id') === courseId.toString());
     
     if (!rowToUpdate) {
       return res.status(404).json({ error: 'ไม่พบหลักสูตรนี้ในระบบ' });
     }
 
-    // เขียนข้อมูลใหม่ทับลงไป
     rowToUpdate.set('course_code', courseCode || '');
     rowToUpdate.set('course_name', courseName);
     rowToUpdate.set('category', category || 'หลักสูตรทั่วไป');
@@ -29,7 +33,38 @@ export default async function handler(req, res) {
     rowToUpdate.set('instructor', instructor || '');
     rowToUpdate.set('location', location || '');
 
-    await rowToUpdate.save(); // สั่งบันทึกลง Sheets
+    await rowToUpdate.save();
+
+    // 3. ตรวจสอบว่าวันที่เริ่มอบรมใหม่เป็นอดีตหรืออนาคต
+    let isPast = false;
+    if (startDate) {
+      const parts = startDate.split('/');
+      if (parts.length === 3) {
+        const cDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        const today = new Date(); 
+        today.setHours(0, 0, 0, 0);
+        if (cDate < today) {
+          isPast = true;
+        }
+      }
+    }
+
+    // 4. กวาดอัปเดตข้อมูลพนักงานทุกคนที่ลงทะเบียนในวิชานี้
+    if (regSheet) {
+      const regRows = await regSheet.getRows();
+      const attendeesToUpdate = regRows.filter(r => r.get('course_id') === courseId.toString());
+
+      const finalStatus = isPast ? 'Attended' : 'Registered';
+      const finalEval = isPast ? 'Pass' : 'Pending';
+      const finalHours = isPast ? (parseFloat(durationHours) || 0) : 0;
+
+      for (const regRow of attendeesToUpdate) {
+        regRow.set('attendance_status', finalStatus);
+        regRow.set('evaluation_result', finalEval);
+        regRow.set('hours_completed', finalHours);
+        await regRow.save(); // บันทึกลง Google Sheets หลังบ้าน
+      }
+    }
 
     return res.status(200).json({ success: true });
   } catch (error) {
