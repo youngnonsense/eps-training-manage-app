@@ -193,13 +193,8 @@ export default function Dashboard() {
     navigator.clipboard.writeText(email); setCopiedEmail(true); setTimeout(() => setCopiedEmail(false), 2000);
   };
 
-  const isCourseUpcoming = (dateStr: string) => {
-    if (!dateStr || typeof dateStr !== 'string') return true;
-    const parts = dateStr.split('/');
-    if (parts.length !== 3) return true;
-    const courseDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    return courseDate >= today;
+ const isCourseUpcoming = (dateStr: string) => {
+    return true; 
   };
 
   const parseDateStr = (dateStr: string) => {
