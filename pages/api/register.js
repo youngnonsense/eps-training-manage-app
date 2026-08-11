@@ -15,32 +15,65 @@ export default async function handler(req, res) {
   try {
     const doc = await getDoc();
     const sheet = doc.sheetsByTitle['Registrations'];
+    const courseSheet = doc.sheetsByTitle['Courses']; // เรียกแท็บ Courses มาด้วยเพื่อดูข้อมูลวิชา
     
-    if (!sheet) {
-      throw new Error('ไม่พบแท็บ Registrations ใน Google Sheets');
+    if (!sheet || !courseSheet) {
+      throw new Error('ไม่พบแท็บที่ต้องการใน Google Sheets');
     }
 
+    // 1. ดึงข้อมูลหลักสูตร เพื่อเอาวันที่ และ ชั่วโมง มาเช็ค
+    const courseRows = await courseSheet.getRows();
+    const courseInfo = courseRows.find(r => r.get('course_id') === courseId.toString());
+    
+    if (!courseInfo) {
+      return res.status(404).json({ error: 'ไม่พบข้อมูลหลักสูตรนี้ในระบบ' });
+    }
+
+    const courseDateStr = courseInfo.get('start_date');
+    const courseHours = parseFloat(courseInfo.get('duration_hours')) || 0;
+
+    // 2. เช็คว่าวันที่ของหลักสูตร ผ่านมาแล้วหรือยัง?
+    let isPast = false;
+    if (courseDateStr) {
+      const parts = courseDateStr.split('/');
+      if (parts.length === 3) {
+        const cDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        const today = new Date(); 
+        today.setHours(0, 0, 0, 0); // รีเซ็ตเวลาเพื่อเทียบแค่วันที่
+        
+        if (cDate < today) {
+          isPast = true; // ถ้าวันที่เรียนน้อยกว่าวันนี้ = เรียนจบไปแล้ว
+        }
+      }
+    }
+
+    // 3. เตรียมตัวแปรสถานะและชั่วโมงให้พร้อม
+    const finalStatus = isPast ? 'Attended' : 'Registered';
+    const finalEval = isPast ? 'Pass' : 'Pending';
+    const finalHours = isPast ? courseHours : 0;
+
+    // 4. แก้ปัญหา ID รวนด้วยการใช้ Math.max หาค่าที่มากที่สุด
     const rows = await sheet.getRows();
     let nextRegId = 1;
 
     if (rows.length > 0) {
-      const lastRegId = rows[rows.length - 1].get('registration_id');
-      const parsedId = parseInt(lastRegId, 10);
-      if (!isNaN(parsedId)) {
-        nextRegId = parsedId + 1;
-      } else {
-        nextRegId = rows.length + 1;
+      const allIds = rows
+        .map(row => parseInt(row.get('registration_id'), 10))
+        .filter(id => !isNaN(id));
+
+      if (allIds.length > 0) {
+        nextRegId = Math.max(...allIds) + 1;
       }
     }
 
-    // เตรียมข้อมูลเป็น Array สำหรับเพิ่มหลายแถวพร้อมกัน
+    // 5. เตรียมข้อมูลเป็น Array สำหรับเพิ่มหลายแถวพร้อมกัน (ใช้ตัวแปรที่คำนวณไว้)
     const newRows = employeeIds.map((empId, index) => ({
       registration_id: nextRegId + index,
       course_id: courseId.toString(),
       employee_id: empId,
-      attendance_status: 'Registered',
-      evaluation_result: 'Pending',
-      hours_completed: 0
+      attendance_status: finalStatus,
+      evaluation_result: finalEval,
+      hours_completed: finalHours
     }));
 
     // บันทึกลง Google Sheets แบบหลายแถวรวดเดียว
