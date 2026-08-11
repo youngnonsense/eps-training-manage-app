@@ -733,9 +733,9 @@ export default function Dashboard() {
                       onChange={e => setNewHistoryItem(e.target.value)} 
                       className="text-xs p-1.5 rounded-lg bg-transparent border border-gray-200 dark:border-gray-700 outline-none w-full text-gray-800 dark:text-gray-200 cursor-pointer" 
                     >
-                      <option value="">-- เลือกหลักสูตร --</option>
+                      <option value="" className="bg-white dark:bg-[#1E1E1E] text-gray-900 dark:text-gray-200">-- เลือกหลักสูตร --</option>
                       {data?.mandatoryCourses?.map((courseName: string, idx: number) => (
-                        <option key={idx} value={courseName}>{courseName}</option>
+                        <option key={idx} value={courseName} className="bg-white dark:bg-[#1E1E1E] text-gray-900 dark:text-gray-200">{courseName}</option>
                       ))}
                     </select>
                     <button 
