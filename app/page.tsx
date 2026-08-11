@@ -41,6 +41,7 @@ export default function Dashboard() {
     startDate: null as Date | null, endDate: null as Date | null, durationHours: '', instructor: '', location: '' 
   });
 
+  // ✅ 1. แก้ให้ Calendar ดึงเดือนปัจจุบันเสมอตอนโหลดหน้าเว็บ
   const [currentMonth, setCurrentMonth] = useState(new Date()); 
 
   useEffect(() => {
@@ -134,15 +135,11 @@ export default function Dashboard() {
     } finally { setIsSubmitting(false); }
   };
 
-  // ✅ แก้ไข: ดักจับ Error ในกรณีที่ Date ไม่ถูกต้อง (ป้องกัน NaN/NaN/0)
   const formatDateForApi = (date: Date | null) => {
     if (!date) return '';
-    const dObj = new Date(date);
-    if (isNaN(dObj.getTime())) return ''; // เพิ่มเช็ค valid date
-    
-    const d = dObj.getDate().toString().padStart(2, '0');
-    const m = (dObj.getMonth() + 1).toString().padStart(2, '0');
-    const y = dObj.getFullYear();
+    const d = date.getDate().toString().padStart(2, '0');
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const y = date.getFullYear();
     return `${d}/${m}/${y}`;
   };
 
@@ -193,8 +190,13 @@ export default function Dashboard() {
     navigator.clipboard.writeText(email); setCopiedEmail(true); setTimeout(() => setCopiedEmail(false), 2000);
   };
 
- const isCourseUpcoming = (dateStr: string) => {
-    return true; 
+  const isCourseUpcoming = (dateStr: string) => {
+    if (!dateStr || typeof dateStr !== 'string') return true;
+    const parts = dateStr.split('/');
+    if (parts.length !== 3) return true;
+    const courseDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return courseDate >= today;
   };
 
   const parseDateStr = (dateStr: string) => {
@@ -252,20 +254,6 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-[#FDFBF7] dark:bg-[#121212] text-gray-900 dark:text-gray-200 p-3 md:p-8 transition-colors duration-500">
-      
-      {/* ✅ แก้ไข: เพิ่ม Global CSS ย่อขนาด DatePicker และตั้งค่าสี Dark Mode */}
-      <style>{`
-        .react-datepicker { font-size: 0.8rem !important; border: 1px solid #e5e7eb !important; border-radius: 1rem !important; overflow: hidden; font-family: inherit !important; }
-        .react-datepicker__header { padding-top: 0.5rem !important; background-color: #f9fafb !important; border-bottom: 1px solid #e5e7eb !important; }
-        .react-datepicker__day-name, .react-datepicker__day { width: 1.6rem !important; line-height: 1.6rem !important; margin: 0.15rem !important; }
-        .dark .react-datepicker { background-color: #1E1E1E !important; border-color: #374151 !important; color: #fff !important; }
-        .dark .react-datepicker__header { background-color: #2A2A2A !important; border-bottom-color: #374151 !important; }
-        .dark .react-datepicker__current-month, .dark .react-datepicker__day-name { color: #9ca3af !important; }
-        .dark .react-datepicker__day { color: #d1d5db !important; }
-        .dark .react-datepicker__day:hover { background-color: #374151 !important; }
-        .dark .react-datepicker__day--selected { background-color: #f3f4f6 !important; color: #111827 !important; font-weight: bold; }
-      `}</style>
-
       <div className="max-w-[1400px] mx-auto space-y-6 md:space-y-8 relative">
         
         <header className={`sticky top-3 md:top-4 z-40 ${glassCard} flex flex-col xl:flex-row justify-between items-center gap-4 py-4 px-4 md:px-6`}>
@@ -337,6 +325,7 @@ export default function Dashboard() {
                 </h2>
                 <div className="w-full sm:w-auto bg-gray-50 dark:bg-[#2A2A2A] p-1.5 rounded-2xl flex gap-1 border border-gray-100 dark:border-gray-700 shadow-sm">
                   <button onClick={() => setViewMode('list')} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}><List size={16} /> List</button>
+                  {/* ✅ 1. เพิ่ม setCurrentMonth(new Date()) เพื่อให้กด Calendar แล้วมาที่เดือนปัจจุบัน */}
                   <button onClick={() => { setViewMode('calendar'); setCurrentMonth(new Date()); }} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${viewMode === 'calendar' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}><CalendarIcon size={16} /> Calendar</button>
                 </div>
               </div>
@@ -357,7 +346,12 @@ export default function Dashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                        {data.courses?.map((course: any) => {
+                        {/* ✅ 2. เรียงตารางหลักสูตรตามวันที่ในหน้า List View */}
+                        {[...(data.courses || [])].sort((a, b) => {
+                          const dateA = parseDateStr(a.startDate)?.getTime() || 0;
+                          const dateB = parseDateStr(b.startDate)?.getTime() || 0;
+                          return dateA - dateB;
+                        }).map((course: any) => {
                           const upcoming = isCourseUpcoming(course.startDate);
                           return (
                             <tr key={course.courseId} onClick={() => setSelectedCourse(course)} className="hover:bg-gray-50 dark:hover:bg-[#2A2A2A] transition-colors group cursor-pointer">
@@ -607,18 +601,28 @@ export default function Dashboard() {
                           <div className="text-[10px] text-gray-400 mt-0.5">{att.department}</div>
                         </td>
                         <td className="p-3 md:p-4 text-center">
-                          <span className="text-[10px] md:text-xs font-bold px-2 py-1 md:px-3 md:py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50">
-                            {(() => {
-                              const parts = selectedCourse.startDate?.split('/') || [];
-                              if (parts.length === 3) {
-                                const cDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-                                const today = new Date(); 
-                                today.setHours(0, 0, 0, 0); // ตั้งค่าให้เทียบแค่วันที่
-                                return cDate < today ? 'Attended' : 'Registered';
-                              }
-                              return att.status || 'Registered';
-                            })()}
-                          </span>
+                          {/* ✅ 3. คำนวณและแสดงผลสถานะ Attended/Registered อัตโนมัติ พร้อมสลับสี */}
+                          {(() => {
+                            let currentStatus = att.status || 'Registered';
+                            const parts = selectedCourse.startDate?.split('/') || [];
+                            
+                            if (parts.length === 3) {
+                              const cDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                              const today = new Date(); 
+                              today.setHours(0, 0, 0, 0); 
+                              currentStatus = cDate < today ? 'Attended' : 'Registered';
+                            }
+
+                            const statusColor = currentStatus === 'Attended' 
+                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50'
+                              : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800/50';
+
+                            return (
+                              <span className={`text-[10px] md:text-xs font-bold px-2 py-1 md:px-3 md:py-1 rounded-full border ${statusColor}`}>
+                                {currentStatus}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="p-3 md:p-4 text-center">
                           <button 
@@ -729,7 +733,6 @@ export default function Dashboard() {
                   </button>
                 </div>
                 
-                {/* ✅ แก้ไข: อัปเดตสีพื้นหลัง/ตัวอักษรของ <select> และ <option> ใน Dark Mode */}
                 {isAddingHistory && (
                   <div className="flex gap-2 mb-3 bg-white dark:bg-[#1E1E1E] p-2 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
                     <select 
@@ -737,9 +740,9 @@ export default function Dashboard() {
                       onChange={e => setNewHistoryItem(e.target.value)} 
                       className="text-xs p-1.5 rounded-lg bg-transparent border border-gray-200 dark:border-gray-700 outline-none w-full text-gray-800 dark:text-gray-200 cursor-pointer" 
                     >
-                      <option value="" className="bg-white dark:bg-[#1E1E1E] text-gray-800 dark:text-gray-200">-- เลือกหลักสูตร --</option>
+                      <option value="">-- เลือกหลักสูตร --</option>
                       {data?.mandatoryCourses?.map((courseName: string, idx: number) => (
-                        <option key={idx} value={courseName} className="bg-white dark:bg-[#1E1E1E] text-gray-800 dark:text-gray-200">{courseName}</option>
+                        <option key={idx} value={courseName}>{courseName}</option>
                       ))}
                     </select>
                     <button 
@@ -855,7 +858,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Modal: เพิ่มหลักสูตร */}
+      {/* Modal: เพิ่มหลักสูตร (อัปเดต DatePicker แบบ dd/mm/yyyy สวยงาม) */}
       {showCourseModal && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-4 z-50">
           <div className="bg-white dark:bg-[#1E1E1E] p-5 md:p-8 rounded-3xl md:rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-2xl max-w-xl w-full max-h-[85vh] md:max-h-[95vh] overflow-y-auto hide-scrollbar">
@@ -886,6 +889,7 @@ export default function Dashboard() {
                 <input required placeholder="พิมพ์ชื่อวิชาที่นี่..." className={`${glassInput}`} value={newCourse.courseName} onChange={e => setNewCourse({...newCourse, courseName: e.target.value})}/>
               </div>
               
+              {/* ใช้ React DatePicker แทน Native Input */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                 <div className="relative">
                   <label className="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">วันที่เริ่ม</label>
