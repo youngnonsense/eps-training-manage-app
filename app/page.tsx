@@ -245,6 +245,7 @@ export default function Dashboard() {
       {selectedEmp && (
         <EmployeeDetailsModal 
           employee={selectedEmp}
+          courses={data?.courses}
           mandatoryCourses={data?.mandatoryCourses}
           onClose={() => setSelectedEmp(null)}
           onAddHistory={handleAddHistory}
