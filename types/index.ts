@@ -20,6 +20,9 @@ export interface Course {
   startDate?: string;
   endDate?: string;
   hours: number;
+  durationHours?: string | number;
+  instructor?: string;
+  location?: string;
   description?: string;
   attendees?: Attendee[];
 }
@@ -34,6 +37,7 @@ export interface Employee {
   levelGroup?: string;
   phone?: string;
   email?: string;
+  status?: string;
   kpi: KPI;
   todoList?: string[];
   completedList?: string[];
