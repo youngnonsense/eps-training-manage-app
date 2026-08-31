@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, List, Calendar as CalendarIcon, Users, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, List, Calendar as CalendarIcon, Users, Plus, Trash2, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Course } from '../types';
 import { isCourseUpcoming, parseDateStr, getDaysInMonth, getFirstDayOfMonth, monthNames } from '../lib/dateUtils';
 
@@ -10,6 +10,7 @@ interface CourseSectionProps {
   currentMonth: Date;
   setCurrentMonth: (date: Date) => void;
   onSelectCourse: (course: Course) => void;
+  onEditCourse: (course: Course, e?: React.MouseEvent) => void;
   onDeleteCourse: (courseId: string | number, courseName: string, e?: React.MouseEvent) => void;
   onOpenRegModalWithCourse: (courseId: string) => void;
 }
@@ -21,6 +22,7 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
   currentMonth,
   setCurrentMonth,
   onSelectCourse,
+  onEditCourse,
   onDeleteCourse,
   onOpenRegModalWithCourse
 }) => {
@@ -101,13 +103,22 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
                             <button 
                               onClick={(e) => { e.stopPropagation(); onOpenRegModalWithCourse(course.courseId.toString()); }} 
                               className="p-2 bg-gray-100 dark:bg-[#333] hover:bg-gray-200 text-gray-600 dark:text-gray-300 rounded-xl transition-all shadow-sm"
+                              title="ลงทะเบียนเพิ่ม"
                             >
                               <Plus size={16}/>
                             </button>
                           )}
                           <button 
+                            onClick={(e) => onEditCourse(course, e)} 
+                            className="p-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-blue-600 dark:text-blue-400 rounded-xl transition-all shadow-sm"
+                            title="แก้ไขหลักสูตร"
+                          >
+                            <Pencil size={16}/>
+                          </button>
+                          <button 
                             onClick={(e) => onDeleteCourse(course.courseId, course.courseName, e)} 
                             className="p-2 bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 text-rose-500 dark:text-rose-400 rounded-xl transition-all shadow-sm"
+                            title="ลบหลักสูตร"
                           >
                             <Trash2 size={16}/>
                           </button>

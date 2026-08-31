@@ -19,35 +19,29 @@ export default async function handler(req, res) {
       throw new Error('ไม่พบแท็บ Courses ใน Google Sheets');
     }
 
-    // หา course_id ล่าสุดที่เป็นตัวเลข
+    // 1. หา course_id ล่าสุดที่เป็นตัวเลข (แก้ปัญหา ID ซ้ำตอนแอดมินกดเรียงวันที่)
     const rows = await courseSheet.getRows();
     let nextIdNumber = 1;
     
     if (rows.length > 0) {
-      const lastId = rows[rows.length - 1].get('course_id');
-      const parsedId = parseInt(lastId, 10);
-      if (!isNaN(parsedId)) {
-        nextIdNumber = parsedId + 1; // รันตัวเลขต่อจากแถวสุดท้าย
-      } else {
-        nextIdNumber = rows.length + 1;
+      // ดึง ID ทั้งหมดออกมา แล้วหาค่าที่เยอะที่สุด
+      const allIds = rows
+        .map(row => parseInt(row.get('course_id'), 10))
+        .filter(id => !isNaN(id)); 
+        
+      if (allIds.length > 0) {
+        nextIdNumber = Math.max(...allIds) + 1; // หาค่าที่มากสุดแล้ว + 1
       }
     }
 
-    // ฟังก์ชันแปลงวันที่จาก "2026-07-23" (HTML Date) เป็น "23/7/2026" (Google Sheets format)
-    const formatDate = (dateString) => {
-      if (!dateString) return '';
-      const [year, month, day] = dateString.split('-');
-      return `${parseInt(day, 10)}/${parseInt(month, 10)}/${year}`;
-    };
-
-    // บันทึกลง Sheet ให้ตรง Column เป๊ะๆ
+    // 2. บันทึกลง Sheet ให้ตรง Column (ไม่ต้องใช้ formatDate แล้วเพราะ Frontend ส่งมาสวยแล้ว)
     await courseSheet.addRow({
       course_id: nextIdNumber,
       course_code: courseCode || '',
       course_name: courseName,
       category: category || 'หลักสูตรทั่วไป',
-      start_date: formatDate(startDate),
-      end_date: formatDate(endDate),
+      start_date: startDate || '', // ลงวันที่ตรงๆ ได้เลย
+      end_date: endDate || '',     // ลงวันที่ตรงๆ ได้เลย
       duration_hours: durationHours,
       instructor: instructor || '',
       location: location || ''

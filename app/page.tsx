@@ -10,6 +10,7 @@ import { CourseAttendeesModal } from '@/components/modals/CourseAttendeesModal';
 import { EmployeeDetailsModal } from '@/components/modals/EmployeeDetailsModal';
 import { GroupRegistrationModal } from '@/components/modals/GroupRegistrationModal';
 import { AddCourseModal } from '@/components/modals/AddCourseModal';
+import { EditCourseModal } from '@/components/modals/EditCourseModal';
 
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -25,6 +26,7 @@ export default function Dashboard() {
   
   const [showRegModal, setShowRegModal] = useState(false);
   const [showCourseModal, setShowCourseModal] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null); 
   const [regCourseId, setRegCourseId] = useState('');
@@ -107,6 +109,11 @@ export default function Dashboard() {
     } catch (err) {
       alert('เกิดข้อผิดพลาดในการลบประวัติ');
     }
+  };
+
+  const handleEditCourseClick = (course: Course, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setEditingCourse(course);
   };
 
   const handleDeleteCourse = async (courseId: string | number, courseName: string, e?: React.MouseEvent) => {
@@ -204,6 +211,7 @@ export default function Dashboard() {
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
               onSelectCourse={setSelectedCourse}
+              onEditCourse={handleEditCourseClick}
               onDeleteCourse={handleDeleteCourse}
               onOpenRegModalWithCourse={handleOpenRegModalWithCourse}
             />
@@ -263,6 +271,17 @@ export default function Dashboard() {
           onClose={() => setShowCourseModal(false)}
           onSuccess={() => {
             setShowCourseModal(false);
+            fetchDashboardData();
+          }}
+        />
+      )}
+
+      {editingCourse && (
+        <EditCourseModal 
+          course={editingCourse}
+          onClose={() => setEditingCourse(null)}
+          onSuccess={() => {
+            setEditingCourse(null);
             fetchDashboardData();
           }}
         />
