@@ -9,11 +9,16 @@ interface OverviewStatsProps {
 export const OverviewStats: React.FC<OverviewStatsProps> = ({ data }) => {
   const glassCard = "bg-white dark:bg-[#1E1E1E] shadow-sm rounded-3xl p-5 md:p-6 transition-colors duration-300 border border-gray-100 dark:border-gray-800";
 
+  const totalEmployees = data.employees?.length || 0;
+  const passedEmployees = data.employees?.filter(e => e.kpi?.isPassed).length || 0;
+  const pendingEmployees = data.employees?.filter(e => !e.kpi?.isPassed).length || 0;
+  const totalCourses = data.courses?.length || 0;
+
   const stats = [
-    { label: 'พนักงานทั้งหมด', val: data.employees?.length || 0, icon: Users, color: 'text-gray-700 dark:text-gray-200', bg: 'bg-gray-100 dark:bg-[#2A2A2A]' },
-    { label: 'ผ่าน KPI แล้ว', val: data.employees?.filter(e => e.kpi?.isPassed).length || 0, icon: CheckCircle, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-    { label: 'ยังไม่ผ่าน KPI', val: data.employees?.filter(e => !e.kpi?.isPassed).length || 0, icon: Clock, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20' },
-    { label: 'หลักสูตรทั้งหมด', val: data.courses?.length || 0, icon: BookOpen, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' }
+    { label: 'พนักงานทั้งหมด', val: totalEmployees, sub: 'คน', icon: Users, color: 'text-gray-700 dark:text-gray-200', bg: 'bg-gray-100 dark:bg-[#2A2A2A]' },
+    { label: 'ผ่าน KPI แล้ว', val: passedEmployees, sub: '≥ 2 หลักสูตร', icon: CheckCircle, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'ยังไม่ผ่าน KPI', val: pendingEmployees, sub: '< 2 หลักสูตร', icon: Clock, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20' },
+    { label: 'หลักสูตรทั้งหมด', val: totalCourses, sub: 'วิชา', icon: BookOpen, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' }
   ];
 
   return (
@@ -26,7 +31,10 @@ export const OverviewStats: React.FC<OverviewStatsProps> = ({ data }) => {
             </div>
             <div className="text-center xl:text-left">
               <p className="text-[10px] md:text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{stat.label}</p>
-              <p className={`text-2xl md:text-3xl font-black ${stat.color} mt-0.5 md:mt-1`}>{stat.val}</p>
+              <div className="flex items-baseline gap-1 justify-center xl:justify-start">
+                <p className={`text-2xl md:text-3xl font-black ${stat.color} mt-0.5 md:mt-1`}>{stat.val}</p>
+                <span className="text-[10px] text-gray-400 font-normal">{stat.sub}</span>
+              </div>
             </div>
           </div>
         ))}

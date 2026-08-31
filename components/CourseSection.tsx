@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, List, Calendar as CalendarIcon, Users, Plus, Trash2, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, List, Calendar as CalendarIcon, Users, Plus, Trash2, Pencil, ChevronLeft, ChevronRight, Award } from 'lucide-react';
 import { Course } from '../types';
 import { isCourseUpcoming, parseDateStr, getDaysInMonth, getFirstDayOfMonth, monthNames } from '../lib/dateUtils';
 
@@ -66,10 +66,10 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
                 <tr className="border-b border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider bg-gray-50/50 dark:bg-[#262626]">
                   <th className="p-4 font-bold w-16 text-center">ID</th>
                   <th className="p-4 font-bold">Course Code</th>
-                  <th className="p-4 font-bold w-1/4">Course Name</th>
+                  <th className="p-4 font-bold w-1/3">Course Name</th>
                   <th className="p-4 font-bold">Category</th>
                   <th className="p-4 font-bold">Date</th>
-                  <th className="p-4 font-bold text-center">Hours</th>
+                  <th className="p-4 font-bold text-center">Hours / Type</th>
                   <th className="p-4 font-bold text-center">Actions</th>
                 </tr>
               </thead>
@@ -85,7 +85,14 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
                       <td className="p-4 text-sm font-black text-gray-800 dark:text-gray-300 text-center">{course.courseId}</td>
                       <td className="p-4 text-sm text-gray-600 dark:text-gray-400 font-medium">{course.courseCode || '-'}</td>
                       <td className="p-4 text-sm font-bold text-gray-900 dark:text-gray-100">
-                        {course.courseName}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span>{course.courseName}</span>
+                          {course.hasCertificate && (
+                            <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 px-2 py-0.5 rounded-lg text-[10px] font-bold">
+                              <Award size={12} className="text-amber-600" /> Certificate (1 หลักสูตร)
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-gray-400 font-normal mt-1 flex items-center gap-1">
                           <Users size={12}/> ผู้ลงทะเบียน: {course.attendees?.length || 0} คน
                         </div>
@@ -96,7 +103,16 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
                       <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1.5"><CalendarIcon size={14}/> {course.startDate || '-'}</div>
                       </td>
-                      <td className="p-4 text-sm font-bold text-center text-gray-800 dark:text-gray-300">{course.hours}</td>
+                      <td className="p-4 text-sm text-center font-bold text-gray-800 dark:text-gray-300">
+                        {course.hasCertificate ? (
+                          <div className="flex flex-col items-center">
+                            <span className="text-amber-600 dark:text-amber-400 text-xs">1 หลักสูตร</span>
+                            <span className="text-[10px] text-gray-400 font-normal">({course.hours} ชม.)</span>
+                          </div>
+                        ) : (
+                          <span>{course.hours} ชม.</span>
+                        )}
+                      </td>
                       <td className="p-4">
                         <div className="flex justify-center gap-2">
                           {upcoming && (
@@ -174,7 +190,8 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
                           const upcoming = isCourseUpcoming(course.startDate);
                           return (
                             <div key={idx} onClick={() => onSelectCourse(course)} className="group/course relative cursor-pointer">
-                              <div className="text-[9px] md:text-[10px] bg-gray-100 dark:bg-[#333] text-gray-800 dark:text-gray-200 p-1.5 md:p-2 rounded-lg font-bold shadow-sm line-clamp-2 leading-tight">
+                              <div className={`text-[9px] md:text-[10px] p-1.5 md:p-2 rounded-lg font-bold shadow-sm line-clamp-2 leading-tight ${course.hasCertificate ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border border-amber-200/60 dark:border-amber-800/40' : 'bg-gray-100 dark:bg-[#333] text-gray-800 dark:text-gray-200'}`}>
+                                {course.hasCertificate && <Award size={10} className="inline mr-1 text-amber-600" />}
                                 {course.courseName}
                               </div>
                               {upcoming && (

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserSearch, X, Phone, Mail, Copy, Check, AlertCircle, CheckCircle, ShieldCheck, Plus, Trash2 } from 'lucide-react';
+import { UserSearch, X, Phone, Mail, Copy, Check, AlertCircle, CheckCircle, ShieldCheck, Plus, Trash2, Award } from 'lucide-react';
 import { Employee } from '../../types';
 
 interface EmployeeDetailsModalProps {
@@ -34,6 +34,9 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
     setIsAddingHistory(false);
   };
 
+  const coursesCompleted = employee.kpi?.totalCoursesCompleted ?? ((employee.kpi?.totalHoursCompleted || 0) / 6);
+  const certCount = employee.kpi?.certCoursesCount || 0;
+
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-4 z-50">
       <div className="bg-white dark:bg-[#1E1E1E] p-5 md:p-8 rounded-3xl md:rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-2xl max-w-5xl w-full max-h-[85vh] md:max-h-[90vh] overflow-y-auto hide-scrollbar">
@@ -43,11 +46,21 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
               <UserSearch size={28} className="md:w-9 md:h-9" />
             </div>
             <div>
-              <h3 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">{employee.nameTh}</h3>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h3 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">{employee.nameTh}</h3>
+                <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${employee.kpi?.isPassed ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800'}`}>
+                  KPI: {coursesCompleted} / 2 หลักสูตร {employee.kpi?.isPassed ? '(ผ่าน)' : '(ยังไม่ผ่าน)'}
+                </span>
+              </div>
               <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 mt-0.5">{employee.nameEn}</p>
               <div className="flex flex-wrap gap-2">
                 <span className="text-[10px] md:text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#2A2A2A] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700">ID: <span>{employee.employeeId}</span></span>
                 <span className="text-[10px] md:text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#2A2A2A] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700">{employee.departmentName}</span>
+                {certCount > 0 && (
+                  <span className="text-[10px] md:text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800/60 flex items-center gap-1">
+                    <Award size={12} /> {certCount} ใบ Certificate
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -100,19 +113,36 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
 
           <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 md:p-5 rounded-3xl border border-emerald-100/50 dark:border-emerald-900/20">
             <h4 className="font-bold text-xs md:text-sm text-emerald-600 dark:text-emerald-400 mb-3 md:mb-4 flex items-center gap-2">
-              <CheckCircle size={16} /> ผ่านแล้วปีนี้ ({employee.completedList?.length || 0})
+              <CheckCircle size={16} /> ผ่านแล้วปีนี้ ({employee.completedDetails?.length || employee.completedList?.length || 0})
             </h4>
             <div className="space-y-2 max-h-[250px] md:max-h-[300px] overflow-y-auto pr-2 hide-scrollbar">
-              {!employee.completedList || employee.completedList.length === 0 ? <p className="text-xs text-gray-400">ยังไม่มีประวัติ</p> : employee.completedList.map((item, idx) => (
+              {employee.completedDetails && employee.completedDetails.length > 0 ? (
+                employee.completedDetails.map((item, idx) => (
+                  <div key={idx} className="p-3 bg-white dark:bg-[#262626] rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-xs font-medium flex justify-between items-start gap-2 text-gray-700 dark:text-gray-300 leading-snug">
+                    <div className="flex gap-2">
+                      <CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" /> 
+                      <div>
+                        <span>{item.courseName}</span>
+                        <div className="text-[10px] text-gray-400 mt-0.5">{item.hours} ชม.</div>
+                      </div>
+                    </div>
+                    {item.hasCertificate && (
+                      <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0">
+                        <Award size={10} /> Cer (1 วิชา)
+                      </span>
+                    )}
+                  </div>
+                ))
+              ) : (!employee.completedList || employee.completedList.length === 0 ? <p className="text-xs text-gray-400">ยังไม่มีประวัติ</p> : employee.completedList.map((item, idx) => (
                 <div key={idx} className="p-3 bg-white dark:bg-[#262626] rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-xs font-medium flex gap-2 text-gray-700 dark:text-gray-300 leading-snug"><CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" /> <span>{item}</span></div>
-              ))}
+              )))}
             </div>
           </div>
 
           <div className="bg-blue-50/50 dark:bg-[#262626] p-4 md:p-5 rounded-3xl border border-blue-100/50 dark:border-gray-700">
             <div className="flex justify-between items-center mb-3 md:mb-4">
               <h4 className="font-bold text-xs md:text-sm text-blue-600 dark:text-gray-300 flex items-center gap-2">
-                <ShieldCheck size={16} /> หลักสูตรบังคับ ({employee.historyList?.length || 0})
+                <ShieldCheck size={16} /> ประวัติเดิม ({employee.historyList?.length || 0})
               </h4>
               <button 
                 onClick={() => setIsAddingHistory(!isAddingHistory)} 

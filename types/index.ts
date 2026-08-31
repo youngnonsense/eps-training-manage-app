@@ -1,8 +1,13 @@
 export interface KPI {
   totalHoursCompleted: number;
+  certCoursesCount?: number;
+  nonCertHours?: number;
+  totalCoursesCompleted: number; // e.g. 2.0
+  targetCourses?: number; // default 2
   isPassed: boolean;
   equivalentCourses?: number;
   statusLabel?: string;
+  progressPercent?: number;
 }
 
 export interface Attendee {
@@ -21,10 +26,17 @@ export interface Course {
   endDate?: string;
   hours: number;
   durationHours?: string | number;
+  hasCertificate?: boolean;
   instructor?: string;
   location?: string;
   description?: string;
   attendees?: Attendee[];
+}
+
+export interface CompletedCourseDetail {
+  courseName: string;
+  hasCertificate?: boolean;
+  hours?: number;
 }
 
 export interface Employee {
@@ -41,6 +53,7 @@ export interface Employee {
   kpi: KPI;
   todoList?: string[];
   completedList?: string[];
+  completedDetails?: CompletedCourseDetail[];
   historyList?: string[];
 }
 
@@ -57,6 +70,7 @@ export interface NewCourseFormData {
   startDate: Date | null;
   endDate: Date | null;
   durationHours: string;
+  hasCertificate: boolean;
   instructor: string;
   location: string;
 }

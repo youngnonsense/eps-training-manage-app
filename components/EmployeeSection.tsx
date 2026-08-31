@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Search, Map, List, UserSearch } from 'lucide-react';
+import { Users, Search, Map, List, UserSearch, Award } from 'lucide-react';
 import { Employee } from '../types';
 
 interface EmployeeSectionProps {
@@ -55,8 +55,8 @@ export const EmployeeSection: React.FC<EmployeeSectionProps> = ({
             </select>
             <select className={`${glassInput} py-2 flex-1 sm:min-w-[120px] bg-white`} value={empFilterKpi} onChange={e => setEmpFilterKpi(e.target.value)}>
               <option value="All">KPI ทั้งหมด</option>
-              <option value="Passed">ผ่านแล้ว</option>
-              <option value="Failed">ยังไม่ผ่าน</option>
+              <option value="Passed">ผ่านแล้ว (≥ 2 หลักสูตร)</option>
+              <option value="Failed">ยังไม่ผ่าน (&lt; 2 หลักสูตร)</option>
             </select>
           </div>
           <div className="hidden sm:flex bg-white dark:bg-[#2A2A2A] p-1 rounded-xl gap-1 border border-gray-100 dark:border-gray-700 shrink-0">
@@ -69,7 +69,10 @@ export const EmployeeSection: React.FC<EmployeeSectionProps> = ({
       {empViewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {employees.map((emp) => {
-            const percent = Math.min(100, Math.round(((emp.kpi?.totalHoursCompleted || 0) / 12) * 100));
+            const coursesCompleted = emp.kpi?.totalCoursesCompleted ?? ((emp.kpi?.totalHoursCompleted || 0) / 6);
+            const percent = emp.kpi?.progressPercent ?? Math.min(100, Math.round((coursesCompleted / 2) * 100));
+            const certCount = emp.kpi?.certCoursesCount || 0;
+
             return (
               <div key={emp.employeeId} className="bg-white dark:bg-[#1E1E1E] p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-4 hover:bg-gray-50 dark:hover:bg-[#2A2A2A] transition-all group">
                 <div className="flex justify-between items-start">
@@ -88,10 +91,16 @@ export const EmployeeSection: React.FC<EmployeeSectionProps> = ({
                     ดูประวัติ
                   </button>
                 </div>
+
                 <div className="space-y-1.5 bg-gray-50/50 dark:bg-[#262626] p-3 rounded-2xl border border-gray-100 dark:border-gray-800 mt-auto">
-                  <div className="flex justify-between text-[10px] font-black tracking-wide">
-                    <span className={emp.kpi?.isPassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'}>
-                      KPI: {emp.kpi?.totalHoursCompleted || 0} / 12 ชม.
+                  <div className="flex justify-between text-[10px] font-black tracking-wide items-center">
+                    <span className={emp.kpi?.isPassed ? 'text-emerald-600 dark:text-emerald-400 flex items-center gap-1' : 'text-gray-500 dark:text-gray-400 flex items-center gap-1'}>
+                      KPI: {coursesCompleted} / 2 หลักสูตร
+                      {certCount > 0 && (
+                        <span className="inline-flex items-center text-[9px] text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded font-normal">
+                          <Award size={10} className="mr-0.5" /> {certCount} Cer
+                        </span>
+                      )}
                     </span>
                     <span className={emp.kpi?.isPassed ? 'text-emerald-600' : 'text-rose-500'}>{percent}%</span>
                   </div>
@@ -119,7 +128,10 @@ export const EmployeeSection: React.FC<EmployeeSectionProps> = ({
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {employees.map((emp) => {
-                  const percent = Math.min(100, Math.round(((emp.kpi?.totalHoursCompleted || 0) / 12) * 100));
+                  const coursesCompleted = emp.kpi?.totalCoursesCompleted ?? ((emp.kpi?.totalHoursCompleted || 0) / 6);
+                  const percent = emp.kpi?.progressPercent ?? Math.min(100, Math.round((coursesCompleted / 2) * 100));
+                  const certCount = emp.kpi?.certCoursesCount || 0;
+
                   return (
                     <tr key={emp.employeeId} className="hover:bg-gray-50 dark:hover:bg-[#2A2A2A] transition-colors">
                       <td className="p-4 text-sm font-black text-gray-800 dark:text-gray-300">{emp.employeeId}</td>
@@ -134,7 +146,10 @@ export const EmployeeSection: React.FC<EmployeeSectionProps> = ({
                           <div className="flex-1 bg-gray-200 dark:bg-gray-700 h-2.5 rounded-full overflow-hidden shadow-inner">
                             <div className={`h-full rounded-full transition-all ${emp.kpi?.isPassed ? 'bg-emerald-400' : 'bg-gray-500'}`} style={{ width: `${percent}%` }} />
                           </div>
-                          <span className="text-xs font-bold w-10 text-right">{percent}%</span>
+                          <div className="text-right whitespace-nowrap">
+                            <span className="text-xs font-bold block">{coursesCompleted}/2 วิชา</span>
+                            <span className="text-[10px] text-gray-400">{percent}%</span>
+                          </div>
                         </div>
                       </td>
                       <td className="p-4 text-center">

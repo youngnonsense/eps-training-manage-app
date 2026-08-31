@@ -5,18 +5,18 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { courseId, courseCode, courseName, category, startDate, endDate, durationHours, instructor, location } = req.body;
+  const { courseId, courseCode, courseName, category, startDate, endDate, durationHours, hasCertificate, instructor, location } = req.body;
 
   try {
     const doc = await getDoc();
     const courseSheet = doc.sheetsByTitle['Courses'];
-    const regSheet = doc.sheetsByTitle['Registrations']; // 1. ดึงแท็บ Registrations เพิ่ม
+    const regSheet = doc.sheetsByTitle['Registrations'];
     
     if (!courseSheet) {
       throw new Error('ไม่พบแท็บ Courses ใน Google Sheets');
     }
 
-    // 2. อัปเดตข้อมูลหลักสูตรในแท็บ Courses
+    // 1. อัปเดตข้อมูลหลักสูตรในแท็บ Courses
     const courseRows = await courseSheet.getRows();
     const rowToUpdate = courseRows.find(r => r.get('course_id') === courseId.toString());
     
@@ -29,13 +29,14 @@ export default async function handler(req, res) {
     rowToUpdate.set('category', category || 'หลักสูตรทั่วไป');
     rowToUpdate.set('start_date', startDate || '');
     rowToUpdate.set('end_date', endDate || '');
-    rowToUpdate.set('duration_hours', durationHours);
+    rowToUpdate.set('duration_hours', durationHours || '');
+    rowToUpdate.set('has_certificate', hasCertificate ? '1' : '0');
     rowToUpdate.set('instructor', instructor || '');
     rowToUpdate.set('location', location || '');
 
     await rowToUpdate.save();
 
-    // 3. ตรวจสอบว่าวันที่เริ่มอบรมใหม่เป็นอดีตหรืออนาคต
+    // 2. ตรวจสอบว่าวันที่เริ่มอบรมใหม่เป็นอดีตหรืออนาคต
     let isPast = false;
     if (startDate) {
       const parts = startDate.split('/');
@@ -49,7 +50,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // 4. กวาดอัปเดตข้อมูลพนักงานทุกคนที่ลงทะเบียนในวิชานี้
+    // 3. กวาดอัปเดตข้อมูลพนักงานทุกคนที่ลงทะเบียนในวิชานี้
     if (regSheet) {
       const regRows = await regSheet.getRows();
       const attendeesToUpdate = regRows.filter(r => r.get('course_id') === courseId.toString());
@@ -62,7 +63,7 @@ export default async function handler(req, res) {
         regRow.set('attendance_status', finalStatus);
         regRow.set('evaluation_result', finalEval);
         regRow.set('hours_completed', finalHours);
-        await regRow.save(); // บันทึกลง Google Sheets หลังบ้าน
+        await regRow.save();
       }
     }
 

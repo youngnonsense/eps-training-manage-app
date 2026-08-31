@@ -5,9 +5,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { courseCode, courseName, category, startDate, endDate, durationHours, instructor, location } = req.body;
+  const { courseCode, courseName, category, startDate, endDate, durationHours, hasCertificate, instructor, location } = req.body;
 
-  if (!courseName || !durationHours) {
+  if (!courseName || (!durationHours && !hasCertificate)) {
     return res.status(400).json({ error: 'กรุณากรอกชื่อหลักสูตรและชั่วโมงอบรม' });
   }
 
@@ -34,15 +34,16 @@ export default async function handler(req, res) {
       }
     }
 
-    // 2. บันทึกลง Sheet ให้ตรง Column (ไม่ต้องใช้ formatDate แล้วเพราะ Frontend ส่งมาสวยแล้ว)
+    // 2. บันทึกลง Sheet ให้ตรง Column (รวมฟิลด์ has_certificate)
     await courseSheet.addRow({
       course_id: nextIdNumber,
       course_code: courseCode || '',
       course_name: courseName,
       category: category || 'หลักสูตรทั่วไป',
-      start_date: startDate || '', // ลงวันที่ตรงๆ ได้เลย
-      end_date: endDate || '',     // ลงวันที่ตรงๆ ได้เลย
-      duration_hours: durationHours,
+      start_date: startDate || '',
+      end_date: endDate || '',
+      duration_hours: durationHours || (hasCertificate ? '6' : '0'),
+      has_certificate: hasCertificate ? '1' : '0',
       instructor: instructor || '',
       location: location || ''
     });

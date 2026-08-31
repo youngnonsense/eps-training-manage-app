@@ -18,14 +18,13 @@ export default async function handler(req, res) {
     const historySheet = doc.sheetsByTitle['Training_History'];
     const historyRows = historySheet ? await historySheet.getRows() : [];
 
-    // 🟢 [เพิ่มใหม่] ดึงข้อมูลหลักสูตรบังคับจาก Training_Need_Matrix
+    // ดึงข้อมูลหลักสูตรบังคับจาก Training_Need_Matrix
     const matrixSheet = doc.sheetsByTitle['Training_Need_Matrix'];
     const matrixRows = matrixSheet ? await matrixSheet.getRows() : [];
     
     // ดึงเฉพาะชื่อหลักสูตร (course_name) และกรองเอาเฉพาะค่าที่ไม่ซ้ำกัน
     const rawMandatoryCourses = matrixRows.map(row => row.get('course_name') || '').filter(name => name.trim() !== '');
     const mandatoryCourses = [...new Set(rawMandatoryCourses)];
-    // 🟢 สิ้นสุดส่วนที่เพิ่มใหม่
 
     const empMap = {};
     empRows.forEach(r => {
@@ -40,6 +39,9 @@ export default async function handler(req, res) {
     
     const courses = courseRows.map(row => {
       const cId = row.get('course_id') || '';
+      const rawCert = row.get('has_certificate') ?? row.get('is_certificate') ?? '';
+      const hasCertificate = rawCert === '1' || rawCert === 1 || rawCert === 'true' || rawCert === true || String(rawCert).toLowerCase() === 'yes';
+
       const attendees = regRows
         .filter(r => r.get('course_id') === cId.toString())
         .map(r => ({
@@ -57,6 +59,8 @@ export default async function handler(req, res) {
         startDate: row.get('start_date') || '',
         endDate: row.get('end_date') || '',
         hours: parseFloat(row.get('duration_hours')) || 0,
+        durationHours: row.get('duration_hours') || '',
+        hasCertificate: hasCertificate,
         instructor: row.get('instructor') || '',
         location: row.get('location') || '',
         attendees: attendees
@@ -73,15 +77,41 @@ export default async function handler(req, res) {
         .map(r => r.get('course_name') || '');
       
       let totalHours = 0;
+      let certCoursesCount = 0;
+      let nonCertHours = 0;
       const completedList = [];
+      const completedDetails = [];
       
       empRegs.forEach(reg => {
-        const c = courses.find(c => c.courseId.toString() === reg.get('course_id'));
-        if (c) {
-          totalHours += c.hours;
-          completedList.push(c.courseName);
+        const isAttended = reg.get('attendance_status') === 'Attended' || reg.get('evaluation_result') === 'Pass';
+        if (isAttended) {
+          const c = courses.find(c => c.courseId.toString() === reg.get('course_id'));
+          if (c) {
+            totalHours += c.hours;
+            if (c.hasCertificate) {
+              certCoursesCount += 1;
+            } else {
+              nonCertHours += c.hours;
+            }
+            completedList.push(c.courseName);
+            completedDetails.push({
+              courseName: c.courseName,
+              hasCertificate: c.hasCertificate,
+              hours: c.hours
+            });
+          }
         }
       });
+
+      // 🟢 คำนวณ KPI ตามเงื่อนไขใหม่:
+      // - คอร์สที่มี Certificate = นับเป็น 1 หลักสูตรเต็ม
+      // - คอร์สทั่วไปที่ไม่มี Certificate = 6 ชั่วโมงนับเป็น 1 หลักสูตร (nonCertHours / 6.0)
+      // - เกณฑ์ผ่าน KPI คือรวมได้ตั้งแต่ 2.0 หลักสูตรขึ้นไป
+      const nonCertEquivalent = nonCertHours / 6.0;
+      const rawTotalCourses = certCoursesCount + nonCertEquivalent;
+      const totalCoursesCompleted = Math.round(rawTotalCourses * 10) / 10;
+      const isPassed = rawTotalCourses >= 2.0;
+      const progressPercent = Math.min(100, Math.round((rawTotalCourses / 2.0) * 100));
 
       return {
         employeeId: empId,
@@ -96,15 +126,20 @@ export default async function handler(req, res) {
         status: row.get('status') || 'Active',
         kpi: {
           totalHoursCompleted: totalHours,
-          isPassed: totalHours >= 12
+          certCoursesCount,
+          nonCertHours,
+          totalCoursesCompleted: totalCoursesCompleted,
+          targetCourses: 2,
+          isPassed: isPassed,
+          progressPercent: progressPercent
         },
         completedList: completedList,
+        completedDetails: completedDetails,
         historyList: historyList,
-        todoList: totalHours < 12 ? ['ต้องเก็บชั่วโมงอบรมเพิ่มให้ครบ 12 ชม.'] : []
+        todoList: !isPassed ? [`ต้องสะสมให้ครบ 2 หลักสูตร (ปัจจุบันได้ ${totalCoursesCompleted}/2 หลักสูตร)`] : []
       };
     });
 
-    // 🟢 [อัปเดต] ส่ง mandatoryCourses แนบไปพร้อมกับพนักงานและหลักสูตร
     return res.status(200).json({ employees, courses, mandatoryCourses });
   } catch (error) {
     console.error('Dashboard API Error:', error);

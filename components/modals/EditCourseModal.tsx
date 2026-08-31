@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Calendar as CalendarIcon } from 'lucide-react';
+import { BookOpen, Calendar as CalendarIcon, Award } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Course } from '../../types';
@@ -21,6 +21,7 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, onClos
     startDate: parseDateStr(course.startDate),
     endDate: parseDateStr(course.endDate),
     durationHours: course.durationHours || course.hours || '',
+    hasCertificate: Boolean(course.hasCertificate),
     instructor: course.instructor || '',
     location: course.location || ''
   });
@@ -87,6 +88,29 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, onClos
             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">ชื่อหลักสูตร *</label>
             <input required placeholder="พิมพ์ชื่อวิชาที่นี่..." className={`${glassInput}`} value={editingCourse.courseName} onChange={e => setEditingCourse({...editingCourse, courseName: e.target.value})}/>
           </div>
+
+          {/* 🟢 Certificate Course Option */}
+          <div className="p-3.5 bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="checkbox"
+                checked={editingCourse.hasCertificate}
+                onChange={e => setEditingCourse({...editingCourse, hasCertificate: e.target.checked})}
+                className="w-5 h-5 rounded text-amber-600 focus:ring-amber-500 border-gray-300"
+              />
+              <div className="flex items-center gap-2">
+                <Award size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                <div>
+                  <span className="text-xs md:text-sm font-bold text-amber-900 dark:text-amber-300">
+                    หลักสูตรมีใบ Certificate
+                  </span>
+                  <p className="text-[10px] md:text-xs text-amber-700/80 dark:text-amber-400/80">
+                    เมื่อเรียนผ่านจะนับเป็น <strong className="text-amber-800 dark:text-amber-200">1 หลักสูตรเต็ม</strong> ทันที (ไม่ต้องคำนวณจากชั่วโมง)
+                  </p>
+                </div>
+              </div>
+            </label>
+          </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
             <div className="relative">
@@ -117,7 +141,7 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, onClos
             </div>
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">ชั่วโมงอบรม *</label>
-              <input required type="number" min="0.5" step="0.5" placeholder="เช่น 6" className={`${glassInput}`} value={editingCourse.durationHours} onChange={e => setEditingCourse({...editingCourse, durationHours: e.target.value})}/>
+              <input required type="number" min="0" step="0.5" placeholder="เช่น 6" className={`${glassInput}`} value={editingCourse.durationHours} onChange={e => setEditingCourse({...editingCourse, durationHours: e.target.value})}/>
             </div>
           </div>
 
