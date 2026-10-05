@@ -37,6 +37,8 @@ export interface CompletedCourseDetail {
   courseName: string;
   hasCertificate?: boolean;
   hours?: number;
+  status?: 'Attended' | 'Registered';
+  startDate?: string;
 }
 
 export interface Employee {

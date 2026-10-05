@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserSearch, X, Phone, Mail, Copy, Check, AlertCircle, CheckCircle, ShieldCheck, Plus, Trash2, Award } from 'lucide-react';
+import { UserSearch, X, Phone, Mail, Copy, Check, AlertCircle, CheckCircle, ShieldCheck, Plus, Trash2, Award, Clock } from 'lucide-react';
 import { Employee, Course } from '../../types';
 
 interface EmployeeDetailsModalProps {
@@ -43,6 +43,13 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
 
   const coursesCompleted = employee.kpi?.totalCoursesCompleted ?? ((employee.kpi?.totalHoursCompleted || 0) / 6);
   const certCount = employee.kpi?.certCoursesCount || 0;
+
+  const attendedCount = employee.completedDetails
+    ? employee.completedDetails.filter(d => d.status !== 'Registered').length
+    : (employee.completedList?.length || 0);
+  const upcomingCount = employee.completedDetails
+    ? employee.completedDetails.filter(d => d.status === 'Registered').length
+    : 0;
 
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-4 z-50">
@@ -131,29 +138,51 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* 2. Completed Courses this Year */}
+          {/* 2. Completed & Registered Courses this Year */}
           <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 md:p-5 rounded-3xl border border-emerald-100/50 dark:border-emerald-900/20">
-            <h4 className="font-bold text-xs md:text-sm text-emerald-600 dark:text-emerald-400 mb-3 md:mb-4 flex items-center gap-2">
-              <CheckCircle size={16} /> ผ่านแล้วปีนี้ ({employee.completedDetails?.length || employee.completedList?.length || 0})
+            <h4 className="font-bold text-xs md:text-sm text-emerald-600 dark:text-emerald-400 mb-3 md:mb-4 flex items-center justify-between gap-2 flex-wrap">
+              <span className="flex items-center gap-2">
+                <CheckCircle size={16} /> ผ่านแล้วปีนี้ ({attendedCount})
+              </span>
+              {upcomingCount > 0 && (
+                <span className="text-[10px] font-bold bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2 py-0.5 rounded-full border border-sky-200 dark:border-sky-800">
+                  + รออบรม {upcomingCount}
+                </span>
+              )}
             </h4>
             <div className="space-y-2 max-h-[250px] md:max-h-[300px] overflow-y-auto pr-2 hide-scrollbar">
               {employee.completedDetails && employee.completedDetails.length > 0 ? (
                 employee.completedDetails.map((item, idx) => {
                   const hasCert = item.hasCertificate || isCourseCert(item.courseName);
+                  const isUpcoming = item.status === 'Registered';
                   return (
-                    <div key={idx} className="p-3 bg-white dark:bg-[#262626] rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm text-xs font-medium flex justify-between items-start gap-2 text-gray-700 dark:text-gray-300 leading-snug">
+                    <div key={idx} className={`p-3 bg-white dark:bg-[#262626] rounded-xl border shadow-sm text-xs font-medium flex justify-between items-start gap-2 text-gray-700 dark:text-gray-300 leading-snug ${isUpcoming ? 'border-sky-200/80 dark:border-sky-900/50' : 'border-gray-100 dark:border-gray-800'}`}>
                       <div className="flex gap-2">
-                        <CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" /> 
+                        {isUpcoming ? (
+                          <Clock size={14} className="text-sky-500 mt-0.5 shrink-0" />
+                        ) : (
+                          <CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" /> 
+                        )}
                         <div>
                           <span className="font-semibold text-gray-900 dark:text-gray-100">{item.courseName}</span>
-                          <div className="text-[10px] text-gray-400 mt-0.5">{item.hours} ชั่วโมง</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                            <span>{item.hours} ชั่วโมง</span>
+                            {item.startDate && <span>• {item.startDate}</span>}
+                          </div>
                         </div>
                       </div>
-                      {hasCert && (
-                        <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 px-2 py-0.5 rounded-lg text-[10px] font-bold shadow-2xs shrink-0">
-                          <Award size={12} className="text-amber-600 dark:text-amber-400" /> มีใบ Cer
-                        </span>
-                      )}
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {isUpcoming && (
+                          <span className="inline-flex items-center gap-1 bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 px-2 py-0.5 rounded-lg text-[9px] font-bold">
+                            ⏳ รออบรม
+                          </span>
+                        )}
+                        {hasCert && (
+                          <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 px-2 py-0.5 rounded-lg text-[10px] font-bold shadow-2xs">
+                            <Award size={12} className="text-amber-600 dark:text-amber-400" /> มีใบ Cer
+                          </span>
+                        )}
+                      </div>
                     </div>
                   );
                 })

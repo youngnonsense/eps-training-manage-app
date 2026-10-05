@@ -1,5 +1,21 @@
 import { getDoc } from '../lib/googleSheets';
 
+function isCoursePastOrToday(startDateStr, endDateStr) {
+  const targetStr = (endDateStr && endDateStr.trim()) ? endDateStr.trim() : (startDateStr || '').trim();
+  if (!targetStr) return false;
+  const parts = targetStr.split('/');
+  if (parts.length !== 3) return false;
+  const day = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const year = parseInt(parts[2], 10);
+  if (isNaN(day) || isNaN(month) || isNaN(year)) return false;
+  const courseDate = new Date(year, month, day);
+  courseDate.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return courseDate <= today;
+}
+
 export async function getEmployeeTrainingSummary(employeeId) {
   const doc = await getDoc();
 
@@ -26,12 +42,8 @@ export async function getEmployeeTrainingSummary(employeeId) {
 
   const positionName = emp.get('position_name');
 
-  // 3. ดึงประวัติการอบรมที่ผ่านแล้ว (Attended + Pass)
-  const passedRegistrations = registrations.filter(r => 
-    r.get('employee_id') === employeeId && 
-    r.get('attendance_status') === 'Attended' && 
-    r.get('evaluation_result') === 'Pass'
-  );
+  // 3. ดึงประวัติการลงทะเบียนของพนักงาน
+  const empRegistrations = registrations.filter(r => r.get('employee_id') === employeeId);
 
   let totalHoursCompleted = 0;
   let certCoursesCount = 0;
@@ -40,14 +52,25 @@ export async function getEmployeeTrainingSummary(employeeId) {
   const passedCourseNames = [];
   const completedDetails = [];
 
-  passedRegistrations.forEach(r => {
+  empRegistrations.forEach(r => {
     const course = courses.find(c => c.get('course_id') === r.get('course_id'));
-    if (course) {
-      const cName = course.get('course_name');
-      const hours = parseFloat(r.get('hours_completed') || course.get('duration_hours') || 0);
-      const rawCert = course.get('has_certificate') ?? course.get('is_certificate') ?? '';
-      const hasCert = rawCert === '1' || rawCert === 1 || rawCert === 'true' || rawCert === true || String(rawCert).toLowerCase() === 'yes';
+    if (!course) return;
 
+    const rawStatus = (r.get('attendance_status') || 'Registered').trim();
+    const rawEval = (r.get('evaluation_result') || '').trim();
+    if (rawStatus.toLowerCase() === 'absence' || rawEval.toLowerCase() === 'fail') return;
+
+    const cName = course.get('course_name');
+    const startDate = course.get('start_date') || '';
+    const endDate = course.get('end_date') || '';
+    const hours = parseFloat(course.get('duration_hours') || r.get('hours_completed') || 0);
+    const rawCert = course.get('has_certificate') ?? course.get('is_certificate') ?? '';
+    const hasCert = rawCert === '1' || rawCert === 1 || rawCert === 'true' || rawCert === true || String(rawCert).toLowerCase() === 'yes';
+
+    const isPast = isCoursePastOrToday(startDate, endDate);
+    const isAttended = rawStatus === 'Attended' || rawEval === 'Pass' || (rawStatus === 'Registered' && isPast);
+
+    if (isAttended) {
       totalHoursCompleted += hours;
       if (hasCert) {
         certCoursesCount += 1;
@@ -59,7 +82,17 @@ export async function getEmployeeTrainingSummary(employeeId) {
       completedDetails.push({
         courseName: cName,
         hasCertificate: hasCert,
-        hours
+        hours,
+        status: 'Attended',
+        startDate
+      });
+    } else if (rawStatus === 'Registered') {
+      completedDetails.push({
+        courseName: cName,
+        hasCertificate: hasCert,
+        hours,
+        status: 'Registered',
+        startDate
       });
     }
   });
@@ -118,6 +151,8 @@ export async function getAllDashboardData() {
       courseId: c.get('course_id'),
       courseName: c.get('course_name'),
       category: c.get('category') || 'ทั่วไป',
+      startDate: c.get('start_date') || '',
+      endDate: c.get('end_date') || '',
       hours: parseFloat(c.get('duration_hours') || 0),
       hasCertificate,
       description: c.get('description') || ''
@@ -129,21 +164,26 @@ export async function getAllDashboardData() {
     const empId = emp.get('employee_id');
     const positionName = emp.get('position_name');
 
-    const passedRegs = registrations.filter(r => 
-      r.get('employee_id') === empId && 
-      r.get('attendance_status') === 'Attended' && 
-      r.get('evaluation_result') === 'Pass'
-    );
+    const empRegs = registrations.filter(r => r.get('employee_id') === empId);
 
     let totalHours = 0;
     let certCoursesCount = 0;
     let nonCertHours = 0;
     const passedCourseNames = [];
 
-    passedRegs.forEach(r => {
+    empRegs.forEach(r => {
       const c = allCourses.find(course => course.courseId.toString() === r.get('course_id'));
-      if (c) {
-        const h = parseFloat(r.get('hours_completed') || c.hours || 0);
+      if (!c) return;
+
+      const rawStatus = (r.get('attendance_status') || 'Registered').trim();
+      const rawEval = (r.get('evaluation_result') || '').trim();
+      if (rawStatus.toLowerCase() === 'absence' || rawEval.toLowerCase() === 'fail') return;
+
+      const isPast = isCoursePastOrToday(c.startDate, c.endDate);
+      const isAttended = rawStatus === 'Attended' || rawEval === 'Pass' || (rawStatus === 'Registered' && isPast);
+
+      if (isAttended) {
+        const h = parseFloat(c.hours || r.get('hours_completed') || 0);
         totalHours += h;
         if (c.hasCertificate) {
           certCoursesCount += 1;
