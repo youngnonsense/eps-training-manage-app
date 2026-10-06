@@ -1,23 +1,25 @@
 import React from 'react';
-import { BookOpen, X, Trash2 } from 'lucide-react';
+import { BookOpen, X, Trash2, Plus } from 'lucide-react';
 import { Course } from '../../types';
 
 interface CourseAttendeesModalProps {
   course: Course;
   onClose: () => void;
   onDeleteRegistration: (courseId: string | number, employeeId: string, nameTh: string) => void;
+  onOpenRegModalWithCourse?: (courseId: string) => void;
 }
 
 export const CourseAttendeesModal: React.FC<CourseAttendeesModalProps> = ({
   course,
   onClose,
-  onDeleteRegistration
+  onDeleteRegistration,
+  onOpenRegModalWithCourse
 }) => {
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-4 z-50">
       <div className="bg-white dark:bg-[#1E1E1E] p-5 md:p-8 rounded-3xl md:rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-2xl max-w-3xl w-full max-h-[85vh] md:max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-start mb-4 md:mb-6 border-b border-gray-100 dark:border-gray-800 pb-4 shrink-0">
-          <div className="pr-4">
+        <div className="flex justify-between items-start mb-4 md:mb-6 border-b border-gray-100 dark:border-gray-800 pb-4 shrink-0 gap-3">
+          <div className="pr-2">
             <h3 className="text-lg md:text-2xl font-bold flex items-start md:items-center gap-2 text-gray-900 dark:text-white leading-tight">
               <BookOpen className="text-gray-700 dark:text-gray-300 shrink-0 mt-1 md:mt-0" /> {course.courseName}
             </h3>
@@ -25,7 +27,20 @@ export const CourseAttendeesModal: React.FC<CourseAttendeesModalProps> = ({
               ผู้ลงทะเบียนทั้งหมด: <span className="font-bold text-gray-800 dark:text-gray-200">{course.attendees?.length || 0}</span> คน
             </p>
           </div>
-          <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-[#2A2A2A] hover:bg-gray-200 rounded-full transition-all text-gray-600 dark:text-gray-300 shrink-0"><X size={20}/></button>
+          <div className="flex items-center gap-2 shrink-0">
+            {onOpenRegModalWithCourse && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenRegModalWithCourse(course.courseId.toString());
+                }}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <Plus size={15} /> ลงทะเบียนเพิ่ม
+              </button>
+            )}
+            <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-[#2A2A2A] hover:bg-gray-200 rounded-full transition-all text-gray-600 dark:text-gray-300 shrink-0"><X size={20}/></button>
+          </div>
         </div>
         
         <div className="overflow-auto pr-2 rounded-xl border border-gray-100 dark:border-gray-800 hide-scrollbar flex-1">

@@ -239,6 +239,7 @@ export default function Dashboard() {
           course={selectedCourse}
           onClose={() => setSelectedCourse(null)}
           onDeleteRegistration={handleDeleteRegistration}
+          onOpenRegModalWithCourse={handleOpenRegModalWithCourse}
         />
       )}
 

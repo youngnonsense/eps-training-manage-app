@@ -41,8 +41,8 @@ export default async function handler(req, res) {
         const today = new Date(); 
         today.setHours(0, 0, 0, 0); // รีเซ็ตเวลาเพื่อเทียบแค่วันที่
         
-        if (cDate < today) {
-          isPast = true; // ถ้าวันที่เรียนน้อยกว่าวันนี้ = เรียนจบไปแล้ว
+        if (cDate <= today) {
+          isPast = true; // ถ้าวันที่เรียนน้อยกว่าหรือเท่ากับวันนี้ = เรียนจบไปแล้ว
         }
       }
     }

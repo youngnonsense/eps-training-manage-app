@@ -137,8 +137,8 @@ export const GroupRegistrationModal: React.FC<GroupRegistrationModalProps> = ({
               <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">เลือกหลักสูตรที่ต้องการลงทะเบียน</label>
               <select required className={`${glassInput} h-10 md:h-12 text-xs md:text-sm`} onChange={e => setRegCourseId(e.target.value)} value={regCourseId}>
                 <option value="">-- เลือกหลักสูตร --</option>
-                {courses.filter((c) => isCourseUpcoming(c.startDate)).map((c) => (
-                  <option key={c.courseId} value={c.courseId}>[{c.courseId}] {c.courseName}</option>
+                {courses.map((c, idx) => (
+                  <option key={`${c.courseId}-${idx}`} value={c.courseId}>[{c.courseId}] {c.courseName}</option>
                 ))}
               </select>
 
