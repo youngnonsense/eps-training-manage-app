@@ -141,7 +141,7 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, onClos
             </div>
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 pl-1">ชั่วโมงอบรม *</label>
-              <input required type="number" min="0" step="0.5" placeholder="เช่น 6" className={`${glassInput}`} value={editingCourse.durationHours} onChange={e => setEditingCourse({...editingCourse, durationHours: e.target.value})}/>
+              <input required type="number" min="0" step="0.5" placeholder="เช่น 3" className={`${glassInput}`} value={editingCourse.durationHours} onChange={e => setEditingCourse({...editingCourse, durationHours: e.target.value})}/>
             </div>
           </div>
 

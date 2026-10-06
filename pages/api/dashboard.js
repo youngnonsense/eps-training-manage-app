@@ -149,9 +149,9 @@ export default async function handler(req, res) {
 
       // คำนวณ KPI:
       // - คอร์สที่มี Certificate = นับเป็น 1 หลักสูตรเต็ม
-      // - คอร์สทั่วไปที่ไม่มี Certificate = 6 ชั่วโมงนับเป็น 1 หลักสูตร (nonCertHours / 6.0)
+      // - คอร์สทั่วไปที่ไม่มี Certificate = 3 ชั่วโมงนับเป็น 1 หลักสูตร (nonCertHours / 3.0)
       // - เกณฑ์ผ่าน KPI คือรวมได้ตั้งแต่ 2.0 หลักสูตรขึ้นไป
-      const nonCertEquivalent = nonCertHours / 6.0;
+      const nonCertEquivalent = nonCertHours / 3.0;
       const rawTotalCourses = certCoursesCount + nonCertEquivalent;
       const totalCoursesCompleted = Math.round(rawTotalCourses * 10) / 10;
       const isPassed = rawTotalCourses >= 2.0;

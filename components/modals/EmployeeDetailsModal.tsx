@@ -41,7 +41,7 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
     return Boolean(found?.hasCertificate);
   };
 
-  const coursesCompleted = employee.kpi?.totalCoursesCompleted ?? ((employee.kpi?.totalHoursCompleted || 0) / 6);
+  const coursesCompleted = employee.kpi?.totalCoursesCompleted ?? ((employee.kpi?.totalHoursCompleted || 0) / 3);
   const certCount = employee.kpi?.certCoursesCount || 0;
 
   const attendedCount = employee.completedDetails

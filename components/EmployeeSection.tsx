@@ -69,7 +69,7 @@ export const EmployeeSection: React.FC<EmployeeSectionProps> = ({
       {empViewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {employees.map((emp) => {
-            const coursesCompleted = emp.kpi?.totalCoursesCompleted ?? ((emp.kpi?.totalHoursCompleted || 0) / 6);
+            const coursesCompleted = emp.kpi?.totalCoursesCompleted ?? ((emp.kpi?.totalHoursCompleted || 0) / 3);
             const percent = emp.kpi?.progressPercent ?? Math.min(100, Math.round((coursesCompleted / 2) * 100));
             const certCount = emp.kpi?.certCoursesCount || 0;
 
@@ -128,7 +128,7 @@ export const EmployeeSection: React.FC<EmployeeSectionProps> = ({
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {employees.map((emp) => {
-                  const coursesCompleted = emp.kpi?.totalCoursesCompleted ?? ((emp.kpi?.totalHoursCompleted || 0) / 6);
+                  const coursesCompleted = emp.kpi?.totalCoursesCompleted ?? ((emp.kpi?.totalHoursCompleted || 0) / 3);
                   const percent = emp.kpi?.progressPercent ?? Math.min(100, Math.round((coursesCompleted / 2) * 100));
                   const certCount = emp.kpi?.certCoursesCount || 0;
 

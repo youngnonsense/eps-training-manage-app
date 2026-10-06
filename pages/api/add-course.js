@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       category: category || 'หลักสูตรทั่วไป',
       start_date: startDate || '',
       end_date: endDate || '',
-      duration_hours: durationHours || (hasCertificate ? '6' : '0'),
+      duration_hours: durationHours || (hasCertificate ? '3' : '0'),
       has_certificate: hasCertificate ? '1' : '0',
       instructor: instructor || '',
       location: location || ''

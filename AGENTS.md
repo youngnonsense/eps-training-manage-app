@@ -21,9 +21,9 @@ Welcome to the **EPS Training Space (HR Development)** codebase. This document o
 1. **Certificate Courses (`hasCertificate = true`):**
    * Any course marked as providing a **Certificate (มีใบ Certificate)** counts as **1.0 Full Course (1 หลักสูตรเต็ม)** directly, regardless of its duration hours.
 2. **Standard Non-Certificate Courses:**
-   * **6 training hours = 1.0 course equivalent** (`hours / 6.0`).
+   * **3 training hours = 1.0 course equivalent** (`hours / 3.0`).
 3. **Total Employee Progress Calculation:**
-   $$\text{Total Courses Completed} = (\text{Certificate Courses Count}) + \left(\frac{\text{Non-Certificate Training Hours}}{6.0}\right)$$
+   $$\text{Total Courses Completed} = (\text{Certificate Courses Count}) + \left(\frac{\text{Non-Certificate Training Hours}}{3.0}\right)$$
 4. **KPI Passed Condition:**
    $$\text{isPassed} = \text{Total Courses Completed} \ge 2.0$$
 

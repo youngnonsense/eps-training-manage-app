@@ -97,7 +97,7 @@ export async function getEmployeeTrainingSummary(employeeId) {
     }
   });
 
-  const totalCoursesCompleted = Math.round((certCoursesCount + (nonCertHours / 6.0)) * 10) / 10;
+  const totalCoursesCompleted = Math.round((certCoursesCount + (nonCertHours / 3.0)) * 10) / 10;
   const isPassed = totalCoursesCompleted >= 2.0;
 
   // 4. Gap Analysis: หาหลักสูตรบังคับตามตำแหน่งที่ยังไม่ได้เรียน (To-Do)
@@ -194,7 +194,7 @@ export async function getAllDashboardData() {
       }
     });
 
-    const totalCourses = Math.round((certCoursesCount + (nonCertHours / 6.0)) * 10) / 10;
+    const totalCourses = Math.round((certCoursesCount + (nonCertHours / 3.0)) * 10) / 10;
     const isPassed = totalCourses >= 2.0;
 
     // Gap Analysis (To-Do)

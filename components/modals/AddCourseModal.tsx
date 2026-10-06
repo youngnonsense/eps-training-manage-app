@@ -154,7 +154,7 @@ export const AddCourseModal: React.FC<AddCourseModalProps> = ({ onClose, onSucce
                 type="number" 
                 min="0" 
                 step="0.5" 
-                placeholder="เช่น 6" 
+                placeholder="เช่น 3" 
                 className={`${glassInput}`} 
                 value={newCourse.durationHours} 
                 onChange={e => setNewCourse({...newCourse, durationHours: e.target.value})}

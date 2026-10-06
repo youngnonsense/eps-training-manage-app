@@ -13,9 +13,9 @@ This skill provides domain expertise, technical patterns, and operational proced
 * **Objective:** Ensure every employee achieves at least **2.0 Course Equivalents (2 หลักสูตร)** annually.
 * **Certificate Weighting:**
   * Courses with a **Certificate (`has_certificate = 1`)** = **1.0 Course Equivalent** regardless of training duration.
-  * Standard courses without certificate = **$\frac{\text{Training Hours}}{6.0}$ Course Equivalents**.
+  * Standard courses without certificate = **$\frac{\text{Training Hours}}{3.0}$ Course Equivalents**.
 * **Formula:**
-  $$\text{Total Courses} = N_{\text{Cert}} + \frac{\sum \text{Hours}_{\text{Non-Cert}}}{6.0}$$
+  $$\text{Total Courses} = N_{\text{Cert}} + \frac{\sum \text{Hours}_{\text{Non-Cert}}}{3.0}$$
 * **Passing Threshold:** $\text{Total Courses} \ge 2.0$
 
 ### 2. Training Need Matrix & Gap Analysis
