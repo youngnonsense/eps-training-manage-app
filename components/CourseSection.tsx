@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   BookOpen, List, Calendar as CalendarIcon, Users, Plus, Trash2, Pencil, 
   ChevronLeft, ChevronRight, Award, ArrowUpDown, ArrowUp, ArrowDown, 
@@ -48,6 +48,11 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
   const [monthlySearch, setMonthlySearch] = useState('');
   const [monthlyDeptFilter, setMonthlyDeptFilter] = useState('All');
   const [monthlyKpiFilter, setMonthlyKpiFilter] = useState('All'); // 'All' | 'Passed' | 'NotPassed'
+  const [monthlyCourseFilter, setMonthlyCourseFilter] = useState('All'); // 'All' | courseId
+
+  useEffect(() => {
+    setMonthlyCourseFilter('All');
+  }, [currentMonth]);
 
   const glassCard = "bg-white dark:bg-[#1E1E1E] shadow-sm rounded-3xl p-5 md:p-6 transition-colors duration-300 border border-gray-100 dark:border-gray-800";
   const glassInput = "bg-white dark:bg-[#2A2A2A] border border-gray-200 dark:border-gray-700 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-800 dark:text-gray-100";
@@ -171,6 +176,12 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
       totalPassedKpi
     };
   }, [coursesInSelectedMonth]);
+
+  const displayedCourses = useMemo(() => {
+    return coursesInSelectedMonth.filter(c => 
+      monthlyCourseFilter === 'All' || c.courseId.toString() === monthlyCourseFilter
+    );
+  }, [coursesInSelectedMonth, monthlyCourseFilter]);
 
   const handleOpenEmpModal = (employeeId: string) => {
     if (!onSelectEmployee) return;
@@ -456,6 +467,19 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
                 </div>
 
                 <select 
+                  value={monthlyCourseFilter} 
+                  onChange={e => setMonthlyCourseFilter(e.target.value)}
+                  className={`${glassInput} w-auto max-w-[200px] cursor-pointer font-medium`}
+                >
+                  <option value="All">ทุกหลักสูตรในเดือนนี้ ({coursesInSelectedMonth.length})</option>
+                  {coursesInSelectedMonth.map((c) => (
+                    <option key={c.courseId} value={c.courseId.toString()}>
+                      [{c.courseId}] {c.courseName}
+                    </option>
+                  ))}
+                </select>
+
+                <select 
                   value={monthlyDeptFilter} 
                   onChange={e => setMonthlyDeptFilter(e.target.value)}
                   className={`${glassInput} w-auto max-w-[150px] cursor-pointer`}
@@ -508,9 +532,17 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
               <h3 className="text-base font-bold text-gray-700 dark:text-gray-300">ไม่มีหลักสูตรอบรมในเดือน {monthNames[month]} {year}</h3>
               <p className="text-xs text-gray-400">สามารถคลิกลูกศรด้านบนเพื่อดูเดือนอื่น หรือกดปุ่ม "เพิ่มหลักสูตร" ด้านบนขวาเพื่อสร้างหลักสูตรใหม่</p>
             </div>
+          ) : displayedCourses.length === 0 ? (
+            <div className="bg-white dark:bg-[#1E1E1E] p-12 text-center rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm space-y-3">
+              <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-[#2A2A2A] rounded-2xl flex items-center justify-center text-gray-400">
+                <BookOpen size={32} />
+              </div>
+              <h3 className="text-base font-bold text-gray-700 dark:text-gray-300">ไม่พบหลักสูตรที่ตรงกับตัวกรอง</h3>
+              <p className="text-xs text-gray-400">ลองเปลี่ยนการเลือกหลักสูตรเป็น "ทุกหลักสูตรในเดือนนี้"</p>
+            </div>
           ) : (
             <div className="space-y-6">
-              {coursesInSelectedMonth.map((course) => {
+              {displayedCourses.map((course) => {
                 // กรองผู้เข้าอบรมในวิชานี้ตาม Filter
                 const filteredAttendees = (course.attendees || []).filter(att => {
                   const matchSearch = 
@@ -552,6 +584,11 @@ export const CourseSection: React.FC<CourseSectionProps> = ({
                               <Award size={13} className="text-amber-600 dark:text-amber-400" /> Certificate (1 หลักสูตรเต็ม)
                             </span>
                           )}
+                          {/* 🟢 ผู้เข้าอบรมต่อหลักสูตร (ตรงกรอบสีแดงในภาพของผู้ใช้) */}
+                          <span className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 px-2.5 py-1 rounded-lg text-xs font-bold shadow-2xs">
+                            <Users size={13} className="text-blue-600 dark:text-blue-400" />
+                            ผู้เข้าอบรม: {course.attendees?.length || 0} คน <span className="font-normal text-blue-500 dark:text-blue-400">({(course.attendees || []).filter(a => a.evaluationResult === 'Pass' || a.status === 'Attended').length} ผ่านแล้ว)</span>
+                          </span>
                         </div>
 
                         <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white leading-snug">
