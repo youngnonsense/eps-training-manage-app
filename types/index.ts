@@ -15,6 +15,13 @@ export interface Attendee {
   nameTh: string;
   department: string;
   status: string;
+  evaluationResult?: string;
+  kpi?: {
+    isPassed: boolean;
+    totalCoursesCompleted: number;
+    totalHoursCompleted?: number;
+    certCoursesCount?: number;
+  };
 }
 
 export interface Course {

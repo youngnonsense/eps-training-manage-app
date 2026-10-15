@@ -17,7 +17,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'monthly'>('list');
   const [empViewMode, setEmpViewMode] = useState<'grid' | 'list'>('grid'); 
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -206,6 +206,8 @@ export default function Dashboard() {
 
             <CourseSection 
               courses={data.courses}
+              employees={data.employees}
+              departments={departments as string[]}
               viewMode={viewMode}
               setViewMode={setViewMode}
               currentMonth={currentMonth}
@@ -214,6 +216,8 @@ export default function Dashboard() {
               onEditCourse={handleEditCourseClick}
               onDeleteCourse={handleDeleteCourse}
               onOpenRegModalWithCourse={handleOpenRegModalWithCourse}
+              onSelectEmployee={setSelectedEmp}
+              onDeleteRegistration={handleDeleteRegistration}
             />
 
             <EmployeeSection 

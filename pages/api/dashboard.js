@@ -53,26 +53,13 @@ export default async function handler(req, res) {
     const courseSheet = doc.sheetsByTitle['Courses'];
     const courseRows = courseSheet ? await courseSheet.getRows() : [];
     
-    const courses = courseRows.map(row => {
+    // 1. แปลงข้อมูลหลักสูตรเบื้องต้น
+    const courseBaseList = courseRows.map(row => {
       const cId = row.get('course_id') || '';
       const rawCert = row.get('has_certificate') ?? row.get('is_certificate') ?? '';
       const hasCertificate = rawCert === '1' || rawCert === 1 || rawCert === 'true' || rawCert === true || String(rawCert).toLowerCase() === 'yes';
       const startDate = row.get('start_date') || '';
       const endDate = row.get('end_date') || '';
-      const isPast = isCoursePastOrToday(startDate, endDate);
-
-      const attendees = regRows
-        .filter(r => r.get('course_id') === cId.toString())
-        .map(r => {
-          const rawStatus = (r.get('attendance_status') || 'Registered').trim();
-          const effectiveStatus = (rawStatus === 'Registered' && isPast) ? 'Attended' : rawStatus;
-          return {
-            employeeId: r.get('employee_id'),
-            nameTh: empMap[r.get('employee_id')]?.nameTh || 'ไม่พบข้อมูล',
-            department: empMap[r.get('employee_id')]?.department || '-',
-            status: effectiveStatus
-          };
-        });
 
       return {
         courseId: cId,
@@ -85,11 +72,11 @@ export default async function handler(req, res) {
         durationHours: row.get('duration_hours') || '',
         hasCertificate: hasCertificate,
         instructor: row.get('instructor') || '',
-        location: row.get('location') || '',
-        attendees: attendees
+        location: row.get('location') || ''
       };
     });
     
+    // 2. คำนวณข้อมูลพนักงานและ KPI สะสมประจำปี
     const employees = empRows.map(row => {
       const empId = row.get('employee_id');
       const empRegs = regRows.filter(r => r.get('employee_id') === empId);
@@ -106,7 +93,7 @@ export default async function handler(req, res) {
       const completedDetails = [];
       
       empRegs.forEach(reg => {
-        const c = courses.find(c => c.courseId.toString() === reg.get('course_id'));
+        const c = courseBaseList.find(c => c.courseId.toString() === reg.get('course_id'));
         if (!c) return;
 
         const rawStatus = (reg.get('attendance_status') || 'Registered').trim();
@@ -181,6 +168,41 @@ export default async function handler(req, res) {
         completedDetails: completedDetails,
         historyList: historyList,
         todoList: !isPassed ? [`ต้องสะสมให้ครบ 2 หลักสูตร (ปัจจุบันได้ ${totalCoursesCompleted}/2 หลักสูตร)`] : []
+      };
+    });
+
+    // สร้าง Map สำหรับค้นหา KPI ของพนักงานแต่ละคนอย่างรวดเร็ว
+    const empKpiMap = {};
+    employees.forEach(emp => {
+      empKpiMap[emp.employeeId] = emp.kpi;
+    });
+
+    // 3. แนบรายชื่อ attendees พร้อมผลการประเมินวิชา และสถานะ KPI ให้กับแต่ละหลักสูตร
+    const courses = courseBaseList.map(c => {
+      const isPast = isCoursePastOrToday(c.startDate, c.endDate);
+
+      const attendees = regRows
+        .filter(r => r.get('course_id') === c.courseId.toString())
+        .map(r => {
+          const empId = r.get('employee_id');
+          const rawStatus = (r.get('attendance_status') || 'Registered').trim();
+          const rawEval = (r.get('evaluation_result') || '').trim();
+          const effectiveStatus = (rawStatus === 'Registered' && isPast) ? 'Attended' : rawStatus;
+          const effectiveEval = rawEval || (effectiveStatus === 'Attended' ? 'Pass' : 'Pending');
+
+          return {
+            employeeId: empId,
+            nameTh: empMap[empId]?.nameTh || 'ไม่พบข้อมูล',
+            department: empMap[empId]?.department || '-',
+            status: effectiveStatus,
+            evaluationResult: effectiveEval,
+            kpi: empKpiMap[empId] || null
+          };
+        });
+
+      return {
+        ...c,
+        attendees: attendees
       };
     });
 
